@@ -1,0 +1,3499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Q*bert</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        @font-face {
+            font-family: 'NK57 Monospace Sc Sb';
+            src: url('fonts/NK57MonospaceScSb-Regular.woff2') format('woff2'),
+                url('fonts/NK57MonospaceScSb-Regular.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Source Code Pro';
+            src: url('fonts/SourceCodePro-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        #options {
+            width: 300px;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .arrow-button {
+            display: inline-block;
+            background-color: white;
+            background-image: url(images/arrow.png);
+            height: 100px;
+            width: 100px;
+            border: none;
+            color: transparent;
+        }
+        .buttons-div {
+            width: 210px;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .arrow-button:nth-of-type(1) {
+            transform: rotate(-90deg);
+        }
+        .arrow-button:nth-of-type(3) {
+            transform: rotate(180deg);
+        }
+        .arrow-button:nth-of-type(4) {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body onload="startGame()">
+    <div style="display: none; font-family: 'NK57 Monospace Sc Sb';">
+        <img id="qbertLogo" src="images/QBert-Logo.png">
+        <img id="levelNumbers" src="images/level_numbers.png">
+        <img id="qbertFont" src="images/qbert_font.png">
+        <img id="qbertSprite" src="images/qbert_sprite.png">
+        <img id="ballsSprite" src="images/balls_sprite.png">
+        <img id="coilySprite" src="images/coily_sprite.png">
+        <img id="slickSprite" src="images/slick_sprite.png">
+        <img id="samSprite" src="images/sam_sprite.png">
+        <img id="wrongwaySprite" src="images/wrongway-sprite.png">
+        <img id="uggSprite" src="images/ugg_sprite.png">
+        <img id="swear" src="images/qbert_swear.png">
+        <img id="life" src="images/life.png">
+    </div>
+    <canvas id="qbert-canvas" height="820" width="768"></canvas>
+    <div class="buttons-div">
+        <input class="arrow-button" id="button-left" type="button" value="left" />
+        <input class="arrow-button" id="button-up" type="button" value="up" />
+        <input class="arrow-button" id="button-down" type="button" value="down" />
+        <input class="arrow-button" id="button-right" type="button" value="right" />
+    </div>
+    <div id="options">
+        <input id="addCoinButton" type="button" value="Add a coin"/><br/>
+        <input id="onePlayerStart" type="button" value="1 player start"/><br/>
+        <input id="twoPlayerStart" type="button" value="2 player start"/><br/>
+        <label for="canvasWidth">Canvas width (px) : </label><br/>
+        <input id="canvasWidth" name="canvasWidth" value="768"/><br/>
+        <label for="canvasHeight">Canvas height (px) : </label><br/>
+        <input id="canvasHeight" name="canvasHeight" value="820"/><br/>
+        <label for="nbLevels">Number of levels : </label><br/>
+        <input id="nbLevels" name="nbLevels" value="7"/><br/>
+        <label for="cubeSize">Cube size (px): </label><br/>
+        <input id="cubeSize" name="cubeSize" value="50"/><br/>
+        <label for="cubeHeight">Cube height (px): </label><br/>
+        <input id="cubeHeight" name="cubeHeight" value="50"/><br/>
+        <label for="qbertStartLevel">Qbert start level : </label><br/>
+        <input id="qbertStartLevel" name="qbertStartLevel" value="1"/><br/>
+        <label for="qbertStartBlock">Qbert start block : </label><br/>
+        <input id="qbertStartBlock" name="qbertStartBlock" value="1"/><br/>
+        <label for="colorLeft">Left side color : </label><br/>
+        <input id="colorLeft" name="colorLeft" value="#633100"/><br/>
+        <label for="colorRight">Right side color : </label><br/>
+        <input id="colorRight" name="colorRight" value="#ff721c"/><br/>
+        <label for="colorTop">Top side color : </label><br/>
+        <input id="colorTop" name="colorTop" value="#ebdc7d"/><br/>
+        <label for="colorBackground">Background color : </label><br/>
+        <input id="colorBackground" name="colorBackground" value="#000"/><br/>
+        <label for="colorFrame">Frame color : </label><br/>
+        <input id="colorFrame" name="colorFrame" value="#000"/><br/>
+        <label for="qbertColorPalette">Color palette :</label><br/>
+        <select id="qbertColorPalette" name="qbertColorPalette"></select><br/>
+        <label for="qbertColorPaletteTop">Top side color palette :</label><br/>
+        <select id="qbertColorPaletteTop" name="qbertColorPaletteTop"></select><br/>
+        <label for="qbertLevel">Level selected :</label><br/>
+        <select id="qbertLevel" name="qbertLevel">
+        </select><br/>
+        <label for="qbertRound">Round selected :</label><br/>
+        <select id="qbertRound" name="qbertRound">
+        </select><br/>
+        <label for="qbertLevelType">Type of gameplay :</label><br/>
+        <select id="qbertLevelType" name="qbertLevelType">
+            <option value="1">Level #1</option>
+            <option value="2">Level #2</option>
+            <option value="3">Level #3</option>
+            <option value="4">Level #4</option>
+            <option value="5">Level #5</option>
+        </select><br/>
+        <label for="sceneSelection">Current scene :</label><br/>
+        <select id="sceneSelection" name="sceneSelection">
+            <option value="title">Title scene</option>
+            <option value="instructions">Instructions scene</option>
+            <option value="demo">Demo scene</option>
+            <option value="highscores">High scores scene</option>
+            <option value="main">Main game scene</option>
+            <option value="level">New level scene</option>
+            <option value="entername">Enter your name scene</option>
+        </select><br/>
+        <label for="currentPlayer">Current player :</label><br/>
+        <select id="currentPlayer" name="currentPlayer">
+            <option value="0">Player 1</option>
+            <option value="1">Player 2</option>
+        </select><br/>
+        <label for="nbCredits">Number of credits : </label><br/>
+        <input id="nbCredits" name="nbCredits" value="0"/><br/>
+    </div>
+    <script>
+
+        class Character {
+            constructor(type) {
+                this.type = type;
+                this.show = true;
+                this.showOnTop = true;
+                this.currentRow = 1;
+                this.currentCube = 1;
+                this.moving = false;
+                this.knelt = false;
+                this.currentDirection = '';
+                this.x = 0;
+                this.y = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.width = 0;
+                this.height = 0;
+            }
+        }
+
+
+// ======== Region : variables initialisation ========
+
+        const canvas = document.getElementById('qbert-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let imagesFolder = 'images/';
+        let soundsFolder = 'sounds/';
+
+        let gameRunning = true;
+        let firstPowerUp = true;
+        let pushStart = false;
+        let allowMovement = false;
+        let currentScene = 'title';
+        let secondsPassed = 0;
+        let oldTimeStamp = 0;
+
+        let gravityFactor = 200;
+        let gravity = 9.81 * gravityFactor;
+
+        let objectsList = [];
+
+        let sceneTransitionTime = 5;
+        let currentSceneTransitionTime = sceneTransitionTime;
+
+        let levelType = [1, 1];
+        let maxPlayers = 2;
+        let nbPlayer = 0;
+        let currentPlayer = 0;
+        let currentLevelPlayer = [0, 0];
+        let currentRoundPlayer = [0, 0];
+        let scorePlayer = [0, 0];
+        let gameOverPlayer = [true, true];
+        let gameStartedPlayer = [false, false];
+        let rankPlayer = [-1, -1];
+        
+        let maxLives = 10;
+        let defaultStartLives = 3;
+        let livesPlayer = [defaultStartLives, defaultStartLives];
+        let extraLivesPlayer = [0, 0];
+
+        let pointsFirstExtraLife = 8000;
+        let pointsAdditionalLife = 14000;
+        let pointsTargetColor = 25;
+        let pointsIntermediateColor = 15;
+        let pointsRemainingDisk = 50;
+
+        let highScoresTable = [
+            { name: 'TJC', score: 3000 }, { name: 'JML', score: 2500 }, { name: 'JAH', score: 2000 },
+            { name: 'MJS', score: 1750 }, { name: 'ECW', score: 1500 }, { name: 'BLT', score: 1250 },
+            { name: 'BMW', score: 1000 }, { name: 'DMW', score: 950 }, { name: 'FDA', score: 900 },
+            { name: 'IRS', score: 850 }, { name: 'LBJ', score: 800 }, { name: 'FDR', score: 750 },
+            { name: 'JFK', score: 700 }, { name: 'IRT', score: 650 }, { name: 'CSN', score: 600 },
+            { name: 'IND', score: 575 }, { name: 'CTA', score: 550 }, { name: 'BMT', score: 525 },
+            { name: 'CDB', score: 500 }, { name: 'XRT', score: 475 }, { name: 'LS ', score: 450 },
+            { name: 'MET', score: 425 }, { name: 'LUP', score: 400 }
+        ];
+
+        // Font-related variables
+
+        let fontName = 'Source Code Pro'
+        let fontDefaultSize = 25;
+        let fontSmallSize = 15;
+        let fontBottomMargin = 5;
+        let spacingCascadeText = 2;
+        let fontHeightSpacing = fontDefaultSize + fontBottomMargin;
+        let fontsList = {
+            standard: String(fontDefaultSize) + 'px "' + fontName + '"',
+            bold: 'bold ' + String(fontDefaultSize) + 'px "' + fontName + '"',
+            small: String(fontSmallSize) + 'px "' + fontName + '"',
+            smallbold: 'bold ' + String(fontSmallSize) + 'px "' + fontName + '"',
+        };
+        let underlineHeightPx = 5;
+        ctx.font = fontsList.bold;
+
+        // Variables containing strings to be displayed
+
+        let creditsString = 'CREDITS';
+        let changeToString = 'CHANGE TO:';
+        let levelString = 'LEVEL:';
+        let roundString = 'ROUND:';
+        let bonusString = 'BONUS';
+        let highScoresString = 'HIGH SCORES';
+        let gameOverString = 'GAME OVER';
+        let copyrightLine1 = '©1982 D. GOTTLIEB AND CO.';
+        let copyrightLine2 = 'ALL RIGHTS RESERVED';
+        let coinPlayString = '1 COIN = 1 PLAY';
+        let pushPlayerString = ['PUSH ONE PLAYER START ONLY', 'PUSH ONE OR TWO PLAYER START'];
+        let instructionsString = [
+            'JUMP ON SQUARES TO CHANGE THEM TO THE TARGET COLOR',
+            'STAY ON PLAYFIELD! JUMPING OFF RESULTS IN A FATAL PLUMMET UNLESS A DISK IS THERE',
+            'AVOID ALL OBJECTS AND CREATURES THAT ARE NOT GREEN',
+            'USE SPINNING DISKS TO LURE SNAKE TO HIS DEATH',
+            'EXTRA LIFE AT ' + String(pointsFirstExtraLife) + ' AND EACH ADDITIONAL ' + String(pointsAdditionalLife)
+        ];
+        let enterNameTitleString = ['YOU DID IT!', 'HI THERE!'];
+        let messageEnterNameString = [
+            ['YOU HAVE USURPED ALL', 'OTHERS TO BECOME THE', 'KINDLY ENTER YOUR INITIALS', 'FOR ALL TO SEE'],
+            ['WELCOME TO THE NOSER ELITE!', 'YOUR RANKING IS ', 'JOYSTICK SELECTS LETTERS', 'EITHER BUTTON WILL ENTER']
+        ];
+        let highScoresRankString = [
+            'SUPREME NOSER!', 'YOU ARE SECOND ONLY TO ONE', 'YOU MUST KNOW SOMETHING!', 'YOU MAKE IT LOOK SO EASY!', 'QUITE IMPRESSIVE ACTUALLY',
+            'AN OUTSTANDING ACHIEVEMENT', 'AN EXPERT WITH A JOYSTICK', 'NOT SHABBY AT ALL', 'A POTENTIAL CHAMPION', 'YOU MADE THE TOP TEN CLUB!',
+            'JUST MISSED THE TOP TEN!', 'YOU COULD HAVE DONE WORSE!', 'ALMOST OUT OF THE TEENS!', 'LOOKING GOOD OUT THERE!', 'A TRULY HONORABLE POSITION',
+            'NOW TRY AND GET SERIOUS!', "IT'S A LONG WAY TO THE TOP", 'PRACTICE MAKES PERFECT!', 'NOTHING TO BRAG ABOUT!', 'ALMOST GOT INTO THE TEENS!',
+            'ONLY 20 SCORES TO BEAT!', 'NOT BAD FOR A BEGINNER!', 'THE BOTTOM OF THE BARREL!' 
+        ];
+        let highScoresRankErrorString = "WAIT! YOU SHOULDN'T BE HERE!";
+        let placeholderHighScoreString = '99) AAA 9999999';
+        let timeString = 'TIME';
+        let eraseString = 'RUB';
+        let endString = 'END';
+        let useIndicationsString = ['USE', 'TO ERASE', 'WHEN DONE'];
+        let instructionsLines = [];
+        let playerString = 'PLAYER';
+
+        let creditsNumber = 0;
+
+        let screenPaddingX = 50;
+        let screenPaddingY = 50;
+
+        let cubeSize = 50;
+        let cubeHeight = 50;
+        let sin30;
+        let cos30;
+
+        let pyramidLevels = 7;
+        let pyramidPosX = 10;
+        let pyramidPosY = 10;
+        let pyramidHorizontalAlign = 'center';
+        let pyramidVerticalAlign = 'center';
+
+        let flyingTargetX = 0;
+        let flyingTargetY = 0;
+
+        let qbertSize = 50;
+        let qbert = [new Character('qbert'), new Character('qbert')];
+
+        let startRow = 1;
+        let startCube = 1;
+
+        let qbertTitlePosX;
+        let qbertTitlePosY;
+        let qbertTitleSpeed = 200;
+        let qbertInstructionsOffsetX = 50;
+        let qbertInstructionsOffsetY = 120;
+        
+        let diskDiameter = 50;
+        let offsetDiskQbertX = -5;
+        let offsetDiskQbertY = qbertSize / 2;
+        
+        // Colour-related variables
+
+        const qbertColorsPalettes = [
+            {
+                leftColor: '#56A999',
+                rightColor: '#314646',
+                topColor: ['#FF6666', '#DEDE00', '#5646EF']
+            },
+            {
+                leftColor: '#663100',
+                rightColor: '#FF7721',
+                topColor: ['#0045DE', '#EFDE77', '#21B931']
+            },
+            {
+                leftColor: '#777777',
+                rightColor: '#212121',
+                topColor: ['#B9CECE', '#454545', '#2166CE']
+            },
+            {
+                leftColor: '#778787',
+                rightColor: '#0F0F99',
+                topColor: ['#A9B90F', '#0066EF', '#990066']
+            },
+            {
+                leftColor: '#000000',
+                rightColor: '#000000',
+                topColor: ['#0045EF', '#CECE00', '#FF6666']
+            },
+            {
+                leftColor: '#B9B921',
+                rightColor: '#B93131',
+                topColor: ['#870077', '#003199', '#2187CE']
+            },
+            {
+                leftColor: '#B9B921',
+                rightColor: '#003199',
+                topColor: ['#00A9DE', '#456655', '#FF5555']
+            },
+            {
+                leftColor: '#004500',
+                rightColor: '#0F9921',
+                topColor: ['#0045FF', '#CECE00', '#B96621']
+            },
+            {
+                leftColor: '#000000',
+                rightColor: '#000000',
+                topColor: ['#000000', '#0000CE', '#000000']
+            }
+        ];
+
+        const levels = [
+            {
+                rounds: [
+                    { colorPalette: 0, topColorIndex: [2, 1, 0], disks: ['l5', 'r5'], bonus: 1000, characters: ['redball', 'coily'] },
+                    { colorPalette: 1, topColorIndex: [1, 0, 2], disks: ['l6', 'r7'], bonus: 1250, characters: ['redball', 'coily'] },
+                    { colorPalette: 2, topColorIndex: [0, 1, 2], disks: ['l4', 'r6'], bonus: 1500, characters: ['coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [1, 0, 2], disks: ['l1', 'r7'], bonus: 1750, characters: ['redball', 'coily', 'greenball', 'slick', 'sam'] }
+                ],
+                type: 1,
+                introSound: soundsFolder + 'level-start.mp3',
+                introQbertMoves: ['right', 'left', 'down', 'up']
+            },
+            {
+                rounds: [
+                    { colorPalette: 1, topColorIndex: [0, 1, 2], disks: ['l4', 'r1', 'r5'], bonus: 2000, characters: ['coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [2, 1, 0], disks: ['l6', 'r1', 'r6'], bonus: 2250, characters: ['coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 0, topColorIndex: [0, 2, 1], disks: ['l3', 'r6'], bonus: 2500, characters: ['redball', 'coily', 'greenball', 'slick', 'sam'] },
+                    { colorPalette: 4, topColorIndex: [1, 0, 2], disks: ['l2', 'r4'], bonus: 2750, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 2,
+                introSound: soundsFolder + 'tune-3.mp3',
+                introQbertMoves: ['right', 'down', 'left', 'right', 'up', 'down']
+            },
+            {
+                rounds: [
+                    { colorPalette: 5, topColorIndex: [2, 1, 0], disks: ['l3', 'l5', 'r3', 'r4'], bonus: 3000, characters: ['redball', 'coily', 'greenball', 'slick', 'sam'] },
+                    { colorPalette: 2, topColorIndex: [1, 0, 2], disks: ['l3', 'l4', 'r4', 'r6'], bonus: 3250, characters: ['coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 1, topColorIndex: [0, 1, 2], disks: ['l1', 'l3', 'r5'], bonus: 3500, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 0, topColorIndex: [1, 2, 0], disks: ['r2', 'r5', 'r7'], bonus: 3750, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 3,
+                introSound: soundsFolder + 'tune-2.mp3',
+                introQbertMoves: ['right', 'down', 'left', 'up', 'down', 'right', 'up']
+            },
+            {
+                rounds: [
+                    { colorPalette: 1, topColorIndex: [2, 1, 0], disks: ['l1', 'l4', 'l6', 'r2', 'r6', 'r7'], bonus: 4000, characters: ['redball', 'coily', 'greenball', 'slick', 'sam'] },
+                    { colorPalette: 4, topColorIndex: [0, 2, 1], disks: ['l1', 'l5', 'l6', 'r2', 'r6', 'r7'], bonus: 4250, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 0, topColorIndex: [1, 0, 2], disks: ['l3', 'l5', 'r2', 'r3', 'r5'], bonus: 4500, characters: ['redball', 'coily', 'greenball', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [2, 1, 0], disks: ['l1', 'l2', 'r4', 'r7'], bonus: 4750, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 4,
+                introSound: soundsFolder + 'tune-4.mp3',
+                introQbertMoves: ['down', 'right', 'left', 'up', 'down', 'right', 'left', 'up', 'down']
+            },
+            {
+                rounds: [
+                    { colorPalette: 0, topColorIndex: [0, 1, 2], disks: ['l1', 'l2', 'l4', 'l6', 'r1', 'r3', 'r7'], bonus: 4750, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 1, topColorIndex: [2, 0, 1], disks: ['l1', 'l5', 'l6', 'r2', 'r4', 'r5'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 2, topColorIndex: [1, 2, 0], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [0, 1, 2], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 5,
+                introSound: soundsFolder + 'tune-2.mp3',
+                introQbertMoves: ['down', 'right', 'left', 'up', 'down', 'right', 'left', 'up', 'down']
+            },
+            {
+                rounds: [
+                    { colorPalette: 1, topColorIndex: [2, 0, 1], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [1, 2, 0], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 0, topColorIndex: [0, 1, 2], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 4, topColorIndex: [2, 0, 1], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 5,
+                introSound: soundsFolder + 'tune-4.mp3',
+                introQbertMoves: ['down', 'right', 'left', 'up', 'down', 'right', 'left', 'up', 'down']
+            },
+            {
+                rounds: [
+                    { colorPalette: 5, topColorIndex: [1, 2, 0], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 2, topColorIndex: [0, 1, 2], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 1, topColorIndex: [2, 0, 1], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 0, topColorIndex: [1, 2, 0], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 5,
+                introSound: soundsFolder + 'tune-3.mp3',
+                introQbertMoves: ['down', 'right', 'left', 'up', 'down', 'right', 'left', 'up', 'down']
+            },
+            {
+                rounds: [
+                    { colorPalette: 1, topColorIndex: [0, 1, 2], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 4, topColorIndex: [2, 0, 1], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 0, topColorIndex: [1, 2, 0], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [0, 1, 2], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 5,
+                introSound: soundsFolder + 'level-start.mp3',
+                introQbertMoves: ['down', 'right', 'left', 'up', 'down', 'right', 'left', 'up', 'down']
+            },
+            {
+                rounds: [
+                    { colorPalette: 0, topColorIndex: [2, 0, 1], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 1, topColorIndex: [1, 2, 0], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 5, topColorIndex: [0, 1, 2], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] },
+                    { colorPalette: 3, topColorIndex: [2, 0, 1], disks: ['l3', 'l5', 'r3', 'r4', 'r7'], bonus: 5000, characters: ['redball', 'coily', 'greenball', 'ugg', 'wrongway', 'slick', 'sam'] }
+                ],
+                type: 5,
+                introSound: soundsFolder + 'tune-2.mp3',
+                introQbertMoves: ['down', 'right', 'left', 'up', 'down', 'right', 'left', 'up', 'down']
+            }
+        ];
+
+        let currentColorPalette = [0, 0];
+        let currentTopColorIndex = [1, 1];
+
+        let leftColor;
+        let rightColor;
+        let topColorList = [];
+        let topColor;
+        let topColorIndexArray = [[], []];
+        
+        let frameStrokeColor = '#000000';
+        let backgroundMainColor = '#000000';
+        let backgroundTitleColor = '#312177';
+        let backgroudDiskColor = '#00ff00';
+        let currentMainSceneBackgroundColor = backgroundMainColor;
+        let fontsColors = { green: '#00B900', orange: '#FF7700', pink: '#EF6699', yellow: '#DEDE00', purple: '#770066', red: '#EF1021', magenta: '#B900B9', blue: '#0045DE' };
+
+        let gradientStopPlayerString = [
+            { stop: 0.000, color: fontsColors.magenta },
+            { stop: 0.333, color: fontsColors.purple },
+            { stop: 0.5, color: fontsColors.magenta },
+            { stop: 0.667, color: fontsColors.pink },
+            { stop: 1.000, color: fontsColors.pink }
+        ];
+        let gradientPlayerStringSpeed = 0.015;
+        
+        let imageQbertLogo = document.getElementById('qbertLogo');
+        let imageLevelNumbers = document.getElementById('levelNumbers');
+        let imageQbertFont = document.getElementById('qbertFont');
+        let imageQbert = document.getElementById('qbertSprite');
+        let imageSwear = document.getElementById('swear');
+        let imageBalls = document.getElementById('ballsSprite');
+        let imageLife = document.getElementById('life');
+
+        let powerUpWaitTime = 1;
+        let currentPowerTime = powerUpWaitTime;
+        let blinkingTime = 1;
+        let blinkingTimer = blinkingTime;
+        let blinkingOnState = true;
+
+        let instructionsTime = 3;
+        let instructionsTimer = instructionsTime;
+        let instructionsShow = [];
+        let instructionsEnd = false;
+        let instructionsAnimationInit = false;
+        let instructionsBallHit = false;
+        let showSwear = false;
+        let instructionsPosX;
+        let instructionsPosY;
+        
+        let diskColorTime = 0.1;
+        let diskColorTimer = diskColorTime;
+        let diskTopColorList = [];
+        let diskBottomColor;
+        let disksPositionList = [];
+        let disksPresenceList = [];
+        let diskOffsetX = 5;
+        let diskOffsetY = 10;
+
+        let arrowsTime = 1;
+        let arrowsTimer = arrowsTime;
+        let arrowsShow = [false, false];
+        
+        // Main scene variables
+
+        let endLevelTime = 2.7;
+        let nextRoundTime = 2;
+        let nextRoundShortTime = 1;
+        let flashColorTime = 0.07;
+        let diskBonusCountTime = 0.5;
+        let gameOverTime = 2;
+        let fallTime = 2;
+        let flyingDiskTime = 3;
+        let flyingDiskFallTime = 1;
+        let backgroundFlashingTime = 0.3;
+        let endLevelTimer = endLevelTime;
+        let flashColorTimer = flashColorTime;
+        let nextRoundTimer = nextRoundTime;
+        let gameOverTimer = gameOverTime;
+        let fallTimer = fallTime;
+        let backgroundFlashingTimer = backgroundFlashingTime;
+        let endLevel = false;
+        let showBonus = false;
+        let countDiskBonus = false;
+        let playFallSound = true;
+        let playEndLevelSound = true;
+        let flyingDiskSequence = false;
+        let showFlyingDisk = false;
+        let remainingFlyingDisksCounter = 0;
+        
+        // Level scene variables
+
+        let playLevelSound = true;
+        let levelSceneTime = 3;
+        let levelSwitchMainTime = 1;
+        let levelQbertMovesIterator;
+        let levelNumberShow = false;
+        let levelNumberFirstFlashTime = 0.5;
+        let levelNumberFlashTime = 0.3;
+        let levelNumberFlashCounter = 0;
+        let levelNumberFlashCounterMax = 3;
+        let levelNumberFlashTimer = levelNumberFirstFlashTime;
+        let levelSceneTimer;
+        let levelSwitchMainTimer = levelSwitchMainTime;
+
+        let levelSceneTopPadding = 10;
+        let levelNumberLargeWidth = 100;
+        let letterLevelStrokeWidth = 20;
+        let letterLevelStrokeHeight = 20;
+        let levelNumberTargetWidth = letterLevelStrokeHeight * 3;
+
+        let levelPlaygroundCubes = [
+            false, true, false,
+            true, true,
+            false, true, false
+        ];
+        let levelPlaygroundCubesColors = [0, 0, 0, 0, 0, 0, 0, 0];
+
+        // Demo scene variables
+        
+        let demoSceneTime = 10;
+        let demoSceneTimer = demoSceneTime;
+        
+        // High scores scene variables
+
+        let highScoresSceneTime = 8;
+        let highScoresSceneTimer = highScoresSceneTime;
+        let spaceWidthHighScore = 50;
+        let spaceHeightHighScore = 40;
+        let highScoreTitlePaddingTop = 70;
+        let numberColumsHighScores = 2;
+        let letterOriginalHeight = 110;
+        
+        // Enter name scene variables
+        
+        let enterNameInitials = '';
+        let enterNameTime = 30;
+        let enterNameTimer = enterNameTime;
+        let enterNameGreenBallSize = 40;
+        let lettersByRow = 6;
+        let enterNameLettersRows = Math.ceil(28 / lettersByRow);
+        let spacingCharacter = ' ';
+        let spaceBetweenCharacters = 5;
+        let spaceBeforeRow = 3;
+        let dummyRow = spacingCharacter.repeat(lettersByRow * (1 + spaceBetweenCharacters) - 1);
+        let enterNameTitleHeight = 50;
+        let enterNameTitlePosY = screenPaddingY;
+        let enterNameInfoTextPosY = enterNameTitlePosY + 2 * enterNameTitleHeight;
+        let enterNameLettersPosX = (canvas.width - ctx.measureText(dummyRow).width) / 2;
+        let enterNameLettersPosY = enterNameInfoTextPosY + 11 * fontHeightSpacing;
+        let enterNameGreenBallPosXIni = enterNameLettersPosX - enterNameGreenBallSize * 0.33;
+        let enterNameGreenBallPosYIni = enterNameLettersPosY - fontHeightSpacing - enterNameGreenBallSize * 0.9;
+        let enterNameGreenBallPosX = enterNameGreenBallPosXIni;
+        let enterNameGreenBallPosY = enterNameGreenBallPosYIni;
+        let currentGreenBallRow = 1;
+        let currentGreenBallLetter = 1;
+        
+// ======== Region : initialisation phase ========
+
+        populateSelectColorPalettes();
+        populateSelectTopColor();
+        populateLevelsList();
+        populateRoundsList();
+
+        levelSetup();
+        updateColorInputValues();
+        buildTopColorIndexArray();
+        
+        initInstructionsLines();
+        computeSinCosCube();
+        computePositions();
+        sceneController(currentScene);
+        
+// ======== Region : start game function ========
+
+        function startGame() {
+            initEnterNameLettersPosition();
+            window.requestAnimationFrame(gameLoop);
+        }
+        
+// ======== Region : iinteraction with the inputs ========
+
+        document.getElementById('canvasWidth').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = 768; }
+            if (parsed <= 0) { parsed = 768; }
+            document.getElementById('qbert-canvas').setAttribute('width', parsed);
+            computePositions();
+        });
+
+        document.getElementById('canvasHeight').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = 820; }
+            if (parsed <= 0) { parsed = 820; }
+            document.getElementById('qbert-canvas').setAttribute('height', parsed);
+            computePositions();
+        });
+
+        document.getElementById('nbLevels').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = pyramidLevels; }
+            if (parsed <= 0) { parsed = pyramidLevels; }
+            if (parsed >= 12) { parsed = 12; }
+            pyramidLevels = parsed;
+            buildTopColorIndexArray();
+            computePositions();
+        });
+
+        document.getElementById('cubeSize').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = cubeSize; }
+            if (parsed <= 0) { parsed = cubeSize; }
+            cubeSize = parsed;
+            buildTopColorIndexArray();
+            computeSinCosCube();
+            computePositions();
+        });
+
+        document.getElementById('cubeHeight').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = cubeHeight; }
+            if (parsed <= 0) { parsed = cubeHeight; }
+            cubeHeight = parsed;
+            buildTopColorIndexArray();
+            computePositions();
+        });
+
+        document.getElementById('qbertStartLevel').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = startRow; }
+            if (parsed <= 0) { parsed = startRow; }
+            startRow = parsed;
+            buildTopColorIndexArray();
+            computePositions();
+        });
+
+        document.getElementById('qbertStartBlock').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = startCube; }
+            if (parsed <= 0) { parsed = startCube; }
+            startCube = parsed;
+            buildTopColorIndexArray();
+            computePositions();
+        });
+
+        document.getElementById('colorLeft').addEventListener('change', function(e) {
+            leftColor = this.value;
+        });
+
+        document.getElementById('colorRight').addEventListener('change', function(e) {
+            rightColor = this.value;
+        });
+
+        document.getElementById('colorTop').addEventListener('change', function(e) {
+            topColor = this.value;
+        });
+
+        document.getElementById('colorBackground').addEventListener('change', function(e) {
+            backgroundMainColor = this.value;
+        });
+
+        document.getElementById('colorFrame').addEventListener('change', function(e) {
+            frameStrokeColor = this.value;
+        });
+
+        document.getElementById('qbertColorPalette').addEventListener('change', function(e) {
+            setColorPalette(this.value);
+            setDiskColorList();
+            updateColorInputValues();
+            buildTopColorIndexArray();
+        });
+
+        document.getElementById('qbertColorPaletteTop').addEventListener('change', function(e) {
+            setColorPalette(currentColorPalette[currentPlayer], this.value);
+            updateColorInputValues();
+            buildTopColorIndexArray();
+        });
+
+        document.getElementById('qbertLevelType').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = levelType[currentPlayer]; }
+            if (parsed <= 0) { parsed = levelType[currentPlayer]; }
+            levelType[currentPlayer] = parsed;
+            buildTopColorIndexArray();
+        });
+
+        document.getElementById('nbCredits').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = creditsNumber; }
+            if (parsed < 0) { parsed = creditsNumber; }
+            setNumberCredits(parsed);
+            if (parsed > 0) {
+                playSound('coin');
+            }
+        });
+
+        document.getElementById('sceneSelection').addEventListener('change', function(e) {
+            sceneController(this.value);
+        });
+
+        document.getElementById('currentPlayer').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = currentPlayer; }
+            if (parsed < 0) { parsed = currentPlayer; }
+            currentPlayer = parsed;
+            changePlayer(currentPlayer);
+            levelSetup();
+        });
+
+        document.getElementById('qbertLevel').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = currentLevelPlayer[currentPlayer]; }
+            if (parsed < 0) { parsed = currentLevelPlayer[currentPlayer]; }
+            currentLevelPlayer[currentPlayer] = parsed;
+            levelSetup();
+            updateColorInputValues();
+            buildTopColorIndexArray();
+            sceneController('level');
+        });
+
+        document.getElementById('qbertRound').addEventListener('change', function(e) {
+            let parsed = parseInt(this.value);
+            if (isNaN(parsed)) { parsed = currentRoundPlayer[currentPlayer]; }
+            if (parsed < 0) { parsed = currentRoundPlayer[currentPlayer]; }
+            currentRoundPlayer[currentPlayer] = parsed;
+            levelSetup();
+            updateColorInputValues();
+            buildTopColorIndexArray();
+            sceneController(currentScene);
+        });
+
+        document.getElementById('addCoinButton').addEventListener('click', function(e) {
+            addCoin();
+        });
+
+        document.getElementById('onePlayerStart').addEventListener('click', function(e) {
+            player1Pressed(e);
+        });
+
+        document.getElementById('twoPlayerStart').addEventListener('click', function(e) {
+            player2Pressed(e);
+        });
+
+        document.getElementById('button-left').addEventListener('click', function(e) {
+            performMove(e, 'left');
+        });
+
+        document.getElementById('button-right').addEventListener('click', function(e) {
+            performMove(e, 'right');
+        });
+
+        document.getElementById('button-up').addEventListener('click', function(e) {
+            performMove(e, 'up');
+        });
+
+        document.getElementById('button-down').addEventListener('click', function(e) {
+            performMove(e, 'down');
+        });
+
+        document.addEventListener('keydown', function(e) {
+            switch (e.key) {
+                case 'ArrowUp':
+                    performMove(e, 'up');
+                    break;
+                case 'ArrowDown':
+                    performMove(e, 'down');
+                    break;
+                case 'ArrowRight':
+                    performMove(e, 'right');
+                    break;
+                case 'ArrowLeft':
+                    performMove(e, 'left');
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    addCoin();
+                    break;
+                case '1': 
+                    player1Pressed(e);
+                    break;
+                case '2':
+                    player2Pressed(e);
+                    break;
+            }
+            
+        });
+
+        function player1Pressed(e) {
+            e.preventDefault();
+            if (currentScene == 'entername') {
+                selectLetter();
+                return;
+            }
+            if (pushStart == true) {
+                nbPlayer = 1;
+                startNewGame();
+            }
+        }
+
+        function player2Pressed(e) {
+            e.preventDefault();
+            if (currentScene == 'entername') {
+                selectLetter();
+                return;
+            }
+            if (pushStart == true && creditsNumber > 1) {
+                nbPlayer = 2;
+                startNewGame();
+            }
+        }
+
+        function performMove(e, direction) {
+            e.preventDefault();
+            if (allowMovement == false) { return; }
+            if(currentScene == 'main') {
+                moveCharacter(qbert[currentPlayer], direction);
+            } else if (currentScene == 'entername') {
+                moveGreenBall(direction);
+            }
+            playSound('jump');
+        }
+
+        // ======== Region : game loop + update and drawing loops ========
+
+        function gameLoop(timeStamp) {
+            secondsPassed = (timeStamp - oldTimeStamp) / 1000;
+            oldTimeStamp = timeStamp;
+            updateScene(currentScene, secondsPassed);
+            renderScene(currentScene);
+            window.requestAnimationFrame(gameLoop);
+        }
+
+        function updateScene(scene, secondsPassed) {
+            switch (scene) {
+                case 'main':
+                    updateMainScene(secondsPassed);
+                    break;
+                case 'title':
+                    updateTitleScene(secondsPassed);
+                    break;
+                case 'instructions':
+                    updateInstructionsScene(secondsPassed);
+                    break;
+                case 'demo':
+                    updateDemoScene(secondsPassed);
+                    break;
+                case 'level':
+                    updateLevelScene(secondsPassed);
+                    break;
+                case 'highscores':
+                    updateHighScoresScene(secondsPassed);
+                    break;
+                case 'entername':
+                    updateEnterNameScene(secondsPassed);
+                    break;
+            }
+        }
+
+        function renderScene(scene) {
+            switch (scene) {
+                case 'main':
+                    drawMainScene();
+                    break;
+                case 'title':
+                    drawTitleScene();
+                    break;
+                case 'instructions':
+                    drawInstructionsScene();
+                    break;
+                case 'demo':
+                    drawDemoScene();
+                    break;
+                case 'level':
+                    drawLevelScene();
+                    break;
+                case 'highscores':
+                    drawHighScoresScene();
+                    break;
+                case 'entername':
+                    drawEnterNameScene();
+                    break;
+            }
+        }
+
+        function sceneController(scene) {
+            switch (scene) {
+                case 'main':
+                    setDiskColorList();
+                    showBonus = false;
+                    endLevel = false;
+                    countDiskBonus = false;
+                    allowMovement = true;
+                    playFallSound = true;
+                    playEndLevelSound = true;
+                    flyingDiskSequence = false;
+                    showFlyingDisk = false;
+                    remainingFlyingDisksCounter = 0;
+                    endLevelTimer = endLevelTime;
+                    nextRoundTimer = nextRoundTime;
+                    flashColorTimer = flashColorTime;
+                    gameOverTimer = gameOverTime;
+                    fallTimer = fallTime;
+                    backgroundFlashingTimer = backgroundFlashingTime;
+                    currentMainSceneBackgroundColor = backgroundMainColor;
+                    break;
+                case 'title':
+                    setDiskColorList(0);
+                    endLevel = false;
+                    allowMovement = false;
+                    currentSceneTransitionTime = sceneTransitionTime;
+                    currentPowerTime = powerUpWaitTime;
+                    qbertTitlePosX = - qbertSize;
+                    qbertTitlePosY = canvas.height - screenPaddingY - 150;
+                    break;
+                case 'instructions':
+                    instructionsEnd = false;
+                    instructionsAnimationInit = false;
+                    instructionsBallHit = false;
+                    allowMovement = false;
+                    showSwear = false;
+                    objectsList = [
+                        { type: 'redball', show: false, x: 200, y: 100, vx: 0, vy: 0, width: 50, height: 50 },
+                    ];
+                    qbertTitlePosX = screenPaddingX;
+                    qbertTitlePosY = screenPaddingY + 100;
+                    instructionsPosX = qbertTitlePosX + qbertSize + 80;
+                    instructionsPosY = qbertTitlePosY + qbertSize + 60;
+                    initInstructionsShow();
+                    break;
+                case 'demo':
+                    allowMovement = false;
+                    demoSceneTimer = demoSceneTime;
+                    break;
+                case 'level':
+                    playLevelSound = true;
+                    allowMovement = false;
+                    levelNumberShow = false;
+                    levelSceneTimer = levelSceneTime;
+                    levelNumberFlashTimer = levelNumberFirstFlashTime;
+                    levelSwitchMainTimer = levelSwitchMainTime;
+                    levelNumberFlashCounter = 0;
+                    levelQbertMovesIterator = yieldIntroQbertMoves(currentLevelPlayer[currentPlayer]);
+                    objectsList = [new Character('qbert')];
+                    objectsList[0].x = (canvas.width - qbertSize) / 2;
+                    objectsList[0].y = screenPaddingY + levelSceneTopPadding + sin30;
+                    objectsList[0].currentDirection = 'down';
+                    objectsList[0].width = qbertSize;
+                    objectsList[0].height = qbertSize;
+                    objectsList[0].currentRow = 1;
+                    objectsList[0].currentCube = 2;
+                    levelPlaygroundCubesColors = [0, 0, 0, 0, 0, 0, 0, 0];
+                    break;
+                case 'highscores':
+                    allowMovement = false;
+                    highScoresSceneTimer = highScoresSceneTime;
+                    break;
+                case 'entername':
+                    allowMovement = true;
+                    enterNameInitials = '';
+                    enterNameTimer = enterNameTime;
+                    currentGreenBallRow = 1;
+                    currentGreenBallLetter = 1;
+                    enterNameGreenBallPosX = enterNameGreenBallPosXIni;
+                    enterNameGreenBallPosY = enterNameGreenBallPosYIni;
+                    break;
+                default:
+                    scene = 'title';
+                    break;
+            }
+            currentScene = scene;
+            document.getElementById('sceneSelection').value = currentScene;
+        }
+
+// ======== Region : update sub-functions for each scene ========
+
+        function updateTitleScene(secondsPassed) {
+            blinkingPushStart(secondsPassed);
+            spinningDisks(secondsPassed);
+            currentSceneTransitionTime -= secondsPassed;
+            if (currentSceneTransitionTime <= 0) {
+                sceneController('instructions');
+                return;
+            }
+            if (currentPowerTime > 0) {
+                currentPowerTime -= secondsPassed;
+                return;
+            }
+            if (firstPowerUp == true) {
+                playSound('hello');
+                firstPowerUp = false;
+                return;
+            }
+            if (qbertTitlePosX < canvas.width - screenPaddingX - qbertSize) {
+                qbertTitlePosX += qbertTitleSpeed * secondsPassed;
+            }
+        }
+
+        function updateInstructionsScene(secondsPassed) {
+            blinkingPushStart(secondsPassed);
+            showInstructions(secondsPassed);
+            if (objectsList[0].y >= (qbertTitlePosY - 50) && objectsList[0].show == true && instructionsBallHit == false) {
+                objectsList[0].vx = 200;
+                objectsList[0].vy = -500;
+                instructionsBallHit = true;
+                playSound('hit');
+            }
+            if (objectsList[0].y >= canvas.height && objectsList[0].show == true && instructionsBallHit == true) {
+                objectsList[0].show = false;
+                instructionsBallHit = false;
+                showSwear = true;
+                playSound('titleSwear');
+            }
+            updateObjects(secondsPassed);
+        }
+
+        function updateDemoScene(secondsPassed) {
+            demoSceneTimer -= secondsPassed;
+            if (demoSceneTimer <= 0) {
+                sceneController('highscores');
+                return;
+            }
+            blinkingPushStart(secondsPassed);
+            spinningDisks(secondsPassed);
+            flashingArrows(secondsPassed);
+        }
+
+        function updateMainScene(secondsPassed) {
+            if (gameOverPlayer[currentPlayer] == true) {
+                allowMovement = false;
+                gameOverSequence(secondsPassed);
+                return;
+            }
+            spinningDisks(secondsPassed);
+            flashingArrows(secondsPassed);
+            animateGradient(secondsPassed);
+            computeExtraLife();
+            if (qbert[currentPlayer].moving == true && (outOfBounds() == false || isQbertOnDisk() == true)) {
+                allowMovement = false;
+                if (computeObjectPosition(qbert[currentPlayer], secondsPassed, qbertSize, 'xy', qbert[currentPlayer].targetX, qbert[currentPlayer].targetY)) {
+                    qbert[currentPlayer].moving = false;
+                    qbert[currentPlayer].knelt = true;
+                    allowMovement = true;
+                    updateCubeTopColor();
+                }
+            }
+            if (outOfBounds() == true && isQbertOnDisk() == false && flyingDiskSequence == false) {
+                allowMovement = false;
+                qbert[currentPlayer].knelt = false;
+                fallSequence(secondsPassed);
+            }
+            if (isQbertOnDisk() == true && qbert[currentPlayer].moving == false) {
+                allowMovement = false;
+                qbert[currentPlayer].knelt = false;
+                removeCurrentDisk();
+                flyingDiskSequence = true;
+                showFlyingDisk = true;
+                setFlyingParameters();
+                playSound('flying');
+                backgroundFlashingTimer = backgroundFlashingTime;
+            }
+            if (flyingDiskSequence == true) {
+                flyingSequence(secondsPassed);
+            }
+            if (checkRoundCompletion() == true) {
+                allowMovement = false;
+                endLevelSequence(secondsPassed);
+            }
+        }
+
+        function updateLevelScene(secondsPassed) {
+            levelSceneTimer -= secondsPassed;
+            levelNumberFlashTimer -= secondsPassed;
+            levelSwitchMainTimer -= secondsPassed;
+            if (playLevelSound == true) {
+                let audioFile = levels[currentLevelPlayer[currentPlayer]].introSound;
+                var audio = new Audio(audioFile);
+                audio.play();
+                playLevelSound = false;
+            }
+            if (levelSceneTimer <= 0) {
+                levelSceneTimer = 0;
+                levelNumberShow = true;
+                if (objectsList[0].moving == false) {
+                    let nextQbertMove = levelQbertMovesIterator.next();
+                    if (nextQbertMove.done == false) {
+                        moveCharacter(objectsList[0],nextQbertMove.value, false);
+                        playSound('jump');
+                        levelSwitchMainTimer = levelSwitchMainTime;
+                    } else if (levelSwitchMainTimer <= 0) {
+                        sceneController('main');
+                    }
+                } else {
+                    if (computeObjectPosition(objectsList[0], secondsPassed, objectsList[0].width, 'xy', objectsList[0].targetX, objectsList[0].targetY)) {
+                        objectsList[0].moving = false;
+                        objectsList[0].knelt = true;
+                        let cubeNumber = getCurrentCubeIndex(objectsList[0], 3);
+                        defineCubeTopColorIndex(levelPlaygroundCubesColors, cubeNumber, false);
+                    }
+                }
+            }
+            if (levelNumberFlashTimer <= 0) {
+                if (levelNumberFlashCounter != levelNumberFlashCounterMax) {
+                    levelNumberShow = !levelNumberShow;
+                    if (levelNumberShow == true) {
+                        levelNumberFlashCounter += 1;
+                    }
+                }
+                levelNumberFlashTimer = levelNumberFlashTime;
+            }
+            
+        }
+
+        function updateHighScoresScene(secondsPassed) {
+            highScoresSceneTimer -= secondsPassed;
+            if (highScoresSceneTimer <= 0) {
+                sceneController('title');
+            }
+        }
+
+        function updateEnterNameScene(secondsPassed) {
+            enterNameTimer -= secondsPassed;
+            if (enterNameTimer <= 0) {
+                insertHighScore();
+            }
+        }
+
+        function* yieldIntroQbertMoves(levelIndex) {
+            yield* levels[levelIndex].introQbertMoves;
+        }
+
+        function setFlyingParameters() {
+            qbert[currentPlayer].vx = (flyingTargetX - qbert[currentPlayer].x) / (flyingDiskTime - flyingDiskFallTime);
+            qbert[currentPlayer].vy = (flyingTargetY - qbert[currentPlayer].y) / (flyingDiskTime - flyingDiskFallTime);
+        }
+
+        function flyingSequence(secondsPassed) {
+            backgroundFlashingDisk(secondsPassed);
+            if (showFlyingDisk == true) {
+                updateQbertFlyingPosition(secondsPassed);
+            } else {
+                if (computeObjectPosition(qbert[currentPlayer], secondsPassed, qbertSize, 'y', 0, pyramidPosY + sin30 - qbertSize + 5) == true) {
+                    resetQbertPostion(currentPlayer);
+                    updateCubeTopColor();
+                    computeQbertStartPosition(currentPlayer);
+                    allowMovement = true;
+                    flyingDiskSequence = false;
+                } 
+            }
+        }
+
+        function backgroundFlashingDisk(secondsPassed) {
+            backgroundFlashingTimer -= secondsPassed;
+            if (backgroundFlashingTimer <= 0) {
+                backgroundFlashingTimer = 0;
+            }
+            let colorRatio = Math.max(0, backgroundFlashingTimer / backgroundFlashingTime);
+            currentMainSceneBackgroundColor = colorInterpolation(backgroudDiskColor, backgroundMainColor, colorRatio);
+        }
+
+        function updateQbertFlyingPosition(secondsPassed) {
+            if (Math.abs(qbert[currentPlayer].x - flyingTargetX) <= Math.abs(qbert[currentPlayer].vx * secondsPassed)) {
+                qbert[currentPlayer].x = flyingTargetX;
+                qbert[currentPlayer].y = flyingTargetY;
+                qbert[currentPlayer].vx = 0;
+                qbert[currentPlayer].vy = 0;
+                showFlyingDisk = false;
+            } else {
+                qbert[currentPlayer].x += qbert[currentPlayer].vx * secondsPassed;
+                qbert[currentPlayer].y += qbert[currentPlayer].vy * secondsPassed;
+            }
+        }
+
+        function fallSequence(secondsPassed) {
+            fallTimer -= secondsPassed;
+            if (playFallSound == true) {
+                playSound('fall');
+                playFallSound = false;
+            }
+            if (fallTimer <= 0) {
+                resetQbertPostion(currentPlayer);
+                computeQbertStartPosition(currentPlayer);
+                removeLife();
+                fallTimer = fallTime;
+                allowMovement = true
+                playFallSound = true;
+            } else {
+                computeObjectPosition(qbert[currentPlayer], secondsPassed);
+            }
+        }
+
+        function gameOverSequence(secondsPassed) {
+            gameOverTimer -= secondsPassed;
+            if (gameOverTimer <= 0) {
+                rankPlayer[currentPlayer] = highScoreRank();
+                if (rankPlayer[currentPlayer] >= 0) {
+                    sceneController('entername');
+                } else {
+                    sceneController('highscores');
+                    playSound('bye');
+                }
+            }
+        }
+
+        function endLevelSequence(secondsPassed) {
+            endLevelTimer -= secondsPassed;
+            nextRoundTimer -= secondsPassed;
+            flashColorTimer -= secondsPassed;
+            endLevel = true;
+            if (playEndLevelSound == true) {
+                playSound('endLevel');
+                playEndLevelSound = false;
+            }
+            if (flashColorTimer <= 0 && endLevelTimer > 0) {
+                cycleTopColorList();
+                flashColorTimer = flashColorTime;
+            } else if (endLevelTimer <= 0 && showBonus == false) {
+                initialiseTopColorList();
+                if (showBonus == false) {
+                    updateScore(getBonus());
+                }
+                showBonus = true;
+                countDiskBonus = hasRemainingDisks();
+                nextRoundTimer = nextRoundTime;
+                if (countDiskBonus == true) { nextRoundTimer = nextRoundShortTime; }
+                
+            } else if (countDiskBonus == true && nextRoundTimer <= 0) {
+                countDiskBonus = countBonusDisk();
+                nextRoundTimer = diskBonusCountTime;
+            } else if (showBonus == true && countDiskBonus == false && nextRoundTimer <= 0) {
+                goToNextRound();
+            }
+        }
+
+        function blinkingPushStart(secondsPassed) {
+            blinkingTimer -= secondsPassed;
+            if (blinkingTimer <= 0){
+                blinkingOnState = !blinkingOnState;
+                blinkingTimer = blinkingTime;
+            }
+        }
+
+        function spinningDisks(secondsPassed) {
+            if (endLevel == true) {
+                return;
+            }
+            diskColorTimer -= secondsPassed;
+            if (diskColorTimer <= 0){
+                cycleDiskTopColorList();
+                diskColorTimer = diskColorTime;
+            }
+        }
+
+        function flashingArrows(secondsPassed) {
+            arrowsTimer -= secondsPassed;
+            if (arrowsTimer <= arrowsTime * 2 / 3) {
+                arrowsShow = [true, false];
+            }
+            if (arrowsTimer <= arrowsTime / 3 || endLevel == true) {
+                arrowsShow = [true, true];
+            }
+            if (arrowsTimer <= 0 && endLevel == false) {
+                arrowsShow = [false, false];
+                arrowsTimer = arrowsTime;
+            }
+        }
+
+        function animateGradient(secondPassed) {
+            for (let i = 0; i < gradientStopPlayerString.length; i++) {
+                gradientStopPlayerString[i].stop = (gradientStopPlayerString[i].stop + gradientPlayerStringSpeed) % 1;
+            }
+        }
+
+        function initInstructionsShow() {
+            instructionsShow = [];
+            for (let i = 0; i < instructionsString.length; i++) {
+                instructionsShow.push(false);
+            }
+        }
+
+        function initInstructionsLines() {
+            ctx.font = fontsList.standard;
+            let posX = screenPaddingX + qbertSize + 80;
+            instructionsLines = [];
+            for (let i = 0; i < instructionsString.length; i++) {
+                let maxWidth = canvas.width - posX - screenPaddingX;
+                let stringToWrite = instructionsString[i];
+                let words = stringToWrite.split(' ');
+                let linesToWrite = [];
+                let line = '';
+
+                for (let n = 0; n < words.length; n++) {
+                    let testLine = line + words[n] + ' ';
+                    let currentWidth = ctx.measureText(testLine).width;
+                    if (currentWidth > maxWidth && n > 0) {
+                        linesToWrite.push(line);
+                        line = words[n] + ' ';
+                    } else {
+                        line = testLine;
+                    }
+                }
+                linesToWrite.push(line);
+                instructionsLines.push(linesToWrite);
+                posX += qbertInstructionsOffsetX;
+            }
+        }
+
+        function instructionsShowStepper() {
+            if (instructionsEnd == true) {
+                return;
+            }
+            for (let i = 0; i < instructionsShow.length; i++) {
+                if (instructionsShow[i] == false) {
+                    instructionsShow[i] = true;
+                    return;
+                }
+            }
+            instructionsEnd = true;
+        }
+
+        function showInstructions(secondPassed) {
+            instructionsTimer -= secondPassed;
+            if (instructionsTimer <= 0) {
+                instructionsShowStepper();
+                if (instructionsEnd == false) {
+                    let currentInstructionIndex = 0;
+                    for (let i = 0; i < instructionsShow.length; i++) {
+                        if (instructionsShow[i] == true) {
+                            currentInstructionIndex = i;
+                        }
+                    }
+                    if (currentInstructionIndex >= 0) {
+                        qbertTitlePosX += qbertInstructionsOffsetX;
+                        qbertTitlePosY += (instructionsLines[currentInstructionIndex].length + 1) * fontHeightSpacing;
+                        playSound('jump');
+                    }  
+                } else {
+                    if (instructionsAnimationInit == false) {
+                        for (let i = 0; i < objectsList.length; i++) {
+                            objectsList[i].show = true;
+                            objectsList[i].x = qbertTitlePosX;
+                        }
+                        instructionsAnimationInit = true;
+                    } else {
+                        sceneController('demo');
+                    }
+                }
+                instructionsTimer = instructionsTime;
+            }
+        }
+
+        function moveGreenBall(direction) {
+            switch (direction) {
+                case 'right':
+                    addRowGreenBall();
+                    addLetterGreenBall();
+                    break;
+                case 'left':
+                    removeRowGreenBall();
+                    removeLetterGreenBall(enterNameLettersRows);
+                    break;
+                case 'up':
+                    removeRowGreenBall();
+                    addLetterGreenBall();
+                    break;
+                case 'down':
+                    addRowGreenBall();
+                    removeLetterGreenBall(1);
+                    break;
+            }
+            computeEnterNameGreenBallPosition();
+        }
+
+        function removeRowGreenBall() {
+            currentGreenBallRow -= 1;
+            if (currentGreenBallRow < 1) {
+                currentGreenBallRow = enterNameLettersRows;
+            }
+        }
+
+        function addRowGreenBall() {
+            currentGreenBallRow += 1;
+            if (currentGreenBallRow > enterNameLettersRows) {
+                currentGreenBallRow = 1;
+            }
+        }
+
+        function removeLetterGreenBall(rowCondition) {
+            currentGreenBallLetter -= 1;
+            if (currentGreenBallRow % 2 != 0 && currentGreenBallRow != rowCondition) {
+                currentGreenBallLetter += 1;
+            }
+            if (currentGreenBallLetter < 1) {
+                currentGreenBallLetter = lettersByRow;
+            }
+        }
+
+        function addLetterGreenBall() {
+            currentGreenBallLetter += 1;
+            if (currentGreenBallRow % 2 == 0) {
+                currentGreenBallLetter -= 1;
+            }
+            if (currentGreenBallLetter > lettersByRow) {
+                currentGreenBallLetter = 1;
+            }
+        }
+
+        function computeEnterNameGreenBallPosition() {
+            enterNameGreenBallPosX = enterNameGreenBallPosXIni + (currentGreenBallLetter - 1) * ctx.measureText(spacingCharacter.repeat(spaceBetweenCharacters + 1)).width;
+            if (currentGreenBallRow % 2 == 0) {
+                enterNameGreenBallPosX += ctx.measureText(spacingCharacter.repeat(spaceBeforeRow)).width;
+            }
+            enterNameGreenBallPosY = enterNameGreenBallPosYIni + (currentGreenBallRow - 1) * 2 * fontDefaultSize;
+        }
+
+        function initEnterNameLettersPosition() {
+            enterNameLettersPosX = (canvas.width - ctx.measureText(dummyRow).width) / 2;
+            enterNameGreenBallPosXIni = enterNameLettersPosX - enterNameGreenBallSize * 0.33;
+            enterNameGreenBallPosYIni = enterNameLettersPosY - fontHeightSpacing - enterNameGreenBallSize * 0.9;
+            enterNameGreenBallPosX = enterNameGreenBallPosXIni;
+            enterNameGreenBallPosY = enterNameGreenBallPosYIni;
+        }
+
+        function selectLetter() {
+            let currentSelectedSlot = (currentGreenBallRow - 1) * 6 + currentGreenBallLetter;
+            if (currentSelectedSlot >= 1 && currentSelectedSlot <= 26) {
+                if (enterNameInitials.length < 3) {
+                    enterNameInitials += String.fromCharCode(currentSelectedSlot + 64);
+                    checkMaxLetters();
+                }
+            } else if (currentSelectedSlot == 27) {
+                if (enterNameInitials.length < 3) {
+                    enterNameInitials += ' ';
+                    checkMaxLetters();
+                }
+            } else if (currentSelectedSlot == 28) {
+                if (enterNameInitials.length < 3) {
+                    enterNameInitials += '.';
+                    checkMaxLetters();
+                }
+            } else if (currentSelectedSlot == 29) {
+                if (enterNameInitials != '') {
+                    enterNameInitials = enterNameInitials.substring(0, enterNameInitials.length - 1);
+                }
+            } else if (currentSelectedSlot == 30) {
+                insertHighScore();
+            }
+        }
+
+        function checkMaxLetters() {
+            if (enterNameInitials.length == 3) {
+                currentGreenBallRow = enterNameLettersRows;
+                currentGreenBallLetter = lettersByRow;
+                computeEnterNameGreenBallPosition();
+                playSound('end');
+            }
+        }
+
+        function insertHighScore() {
+            if (rankPlayer[currentPlayer] >= 0 && rankPlayer[currentPlayer] <= (highScoresTable.length - 1)) {
+                enterNameInitials += '   ';
+                enterNameInitials = enterNameInitials.slice(0, 3);
+                highScoresTable.splice(rankPlayer[currentPlayer], 0, { name: enterNameInitials, score: scorePlayer[currentPlayer] });
+                highScoresTable.pop();
+            }
+            playSound('bye');
+            sceneController('highscores');
+        }
+
+        function computeCharacterSpeeds(character, jumpHeight) {
+            character.vy = - Math.sqrt(2 * gravity * jumpHeight);
+            let highPointY = character.y - jumpHeight;
+            let timeRising = Math.abs(character.vy / gravity);
+            let timeFalling = Math.sqrt(Math.abs(highPointY - character.targetY) / gravity);
+            let jumpTime = timeRising + timeFalling;
+            character.vx = (character.targetX - character.x) / jumpTime;
+        }
+
+        function moveCharacter(character, direction, pyramidScene = true) {
+
+            character.currentDirection = direction;
+            character.moving = true;
+            character.knelt = false;
+
+            switch (character.currentDirection) {
+                case 'left':
+                    character.currentRow -= 1;
+                    if (pyramidScene == true || character.currentRow % 2 == 0) {
+                        character.currentCube -= 1;
+                    }
+                    if (isQbertOnDisk() == true) {
+                        character.targetX = character.x - (2 * cos30 - diskDiameter / 2 + diskOffsetX);
+                        character.targetY = character.y - (sin30 + diskOffsetY);
+                    } else if (outOfBounds() == false) {
+                        character.targetX = character.x - cos30;
+                        character.targetY = character.y - (sin30 + cubeHeight);
+                    } else {
+                        character.targetX = character.x - 2 * cos30;
+                        character.targetY = canvas.height + character.height;
+                        character.showOnTop = false;
+                    }
+                    computeCharacterSpeeds(character, 100);
+                    break;
+                case 'right':
+                    character.currentRow += 1;
+                    if (pyramidScene == true || character.currentRow % 2 != 0) {
+                        character.currentCube += 1;
+                    }
+                    if (outOfBounds() == false) {
+                        character.targetX = character.x + cos30;
+                        character.targetY = character.y + sin30 + cubeHeight;
+                    } else {
+                        character.targetX = character.x + 2 * cos30;
+                        character.targetY = canvas.height + character.height;
+                        character.showOnTop = true;
+                    }
+                    computeCharacterSpeeds(character, 25);
+                    break;
+                case 'up':
+                    character.currentRow -= 1;
+                    if (pyramidScene == false && character.currentRow % 2 != 0) {
+                        character.currentCube += 1;
+                    }
+                    if (isQbertOnDisk() == true) {
+                        character.targetX = character.x + 2 * cos30 - diskDiameter / 2 + diskOffsetX;
+                        character.targetY = character.y - (sin30 + diskOffsetY);
+                    } else if (outOfBounds() == false) {
+                        character.targetX = character.x + cos30;
+                        character.targetY = character.y - (sin30 + cubeHeight);
+                    } else {
+                        character.targetX = character.x + 2 * cos30;
+                        character.targetY = canvas.height + character.height;
+                        character.showOnTop = false;
+                    }
+                    computeCharacterSpeeds(character, 100);
+                    break;
+                case 'down':
+                    character.currentRow += 1;
+                    if (pyramidScene == false && character.currentRow % 2 == 0) {
+                        character.currentCube -= 1;
+                    }
+                    if (outOfBounds() == false) {
+                        character.targetX = character.x - cos30;
+                        character.targetY = character.y + sin30 + cubeHeight;
+                    } else {
+                        character.targetX = character.x - 2 * cos30;
+                        character.targetY = canvas.height + character.height;
+                        character.showOnTop = true;
+                    }
+                    computeCharacterSpeeds(character, 25);
+                    break;
+            }
+            
+            console.log(direction, character.currentRow, character.currentCube);
+        }
+
+        function removeCurrentDisk() {
+            let qbertCurrentDisk = 'r';
+            if (qbert[currentPlayer].currentCube < 1) {
+                qbertCurrentDisk = 'l'
+            }
+            qbertCurrentDisk = qbertCurrentDisk + String(qbert[currentPlayer].currentRow + 1);
+            disksPresenceList[disksPositionList.findIndex(position => qbertCurrentDisk == position)] = false;
+        }
+
+        function printQbertPosition() {
+            // console.log('{X, Y} : {' + qbertPosX + ', ' + qbertPosY + '}');
+            let cubeNumber = getPyramidCurrentCubeIndex(qbert[currentPlayer]);
+            console.log('Row : ' + qbert[currentPlayer].currentRow + ' - Cube : ' + qbert[currentPlayer].currentCube + ' - Absolute cube : ' + cubeNumber);
+        }
+
+        function playSound(action) { 
+            let audioFile = '';
+            let parameter = '';
+            if (action.startsWith('disk')) {
+                parameter = parseInt(action.substring(4));
+                if (parameter > 7) { parameter = 7 }
+                if (parameter < 1) { parameter = 1 }
+                action = 'disk';
+            }
+            switch (action) {
+                case 'jump':
+                    audioFile = soundsFolder + 'jump.mp3';
+                    break;
+                case 'coin':
+                    audioFile = soundsFolder + 'coin.mp3';
+                    break;
+                case 'hello':
+                    audioFile = soundsFolder + 'qbert-hello.mp3';
+                    break;
+                case 'endLevel':
+                    audioFile = soundsFolder + 'victory.mp3';
+                    break;
+                case 'extraLife':
+                    audioFile = soundsFolder + 'extra-life.mp3';
+                    break;
+                case 'fall':
+                    audioFile = soundsFolder + 'fall.mp3';
+                    break;
+                case 'disk':
+                    audioFile = soundsFolder + 'disk' + String(parameter) + '.mp3';
+                    break;
+                case 'bye':
+                    audioFile = soundsFolder + 'bye-bye.mp3';
+                    break;
+                case 'hit':
+                    audioFile = soundsFolder + 'poke.mp3';
+                    break;
+                case 'flying':
+                    audioFile = soundsFolder + 'flying.mp3';
+                    break;
+                case 'end':
+                    audioFile = soundsFolder + 'disk7.mp3';
+                    break;
+                case 'titleSwear':
+                    audioFile = soundsFolder + 'fx_18c.mp3';
+                    break;
+            }
+            if (audioFile !== '') {
+                var audio = new Audio(audioFile);
+                audio.play();
+            }
+        }
+
+        function changePlayer(playerIndex) {
+            currentPlayer = playerIndex;
+            if (gameStartedPlayer[currentPlayer] == false) {
+                startNewGamePlayer(currentPlayer);
+            }
+        }
+
+        function updateScore(points) {
+            scorePlayer[currentPlayer] += points;
+        }
+
+        function getBonus() {
+            return levels[currentLevelPlayer[currentPlayer]].rounds[currentRoundPlayer[currentPlayer]].bonus;
+        }
+
+        function hasRemainingDisks() {
+            for (let i = 0; i < disksPresenceList.length; i++) {
+                if (disksPresenceList[i] == true) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function countBonusDisk() {
+            
+            for (let i = 0; i < disksPresenceList.length; i++) {
+                if (disksPresenceList[i] == true) {
+                    disksPresenceList[i] = false;
+                    remainingFlyingDisksCounter += 1;
+                    updateScore(pointsRemainingDisk);
+                    playSound('disk' + String(remainingFlyingDisksCounter));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function removeLife() {
+            livesPlayer[currentPlayer] -= 1;
+            if (livesPlayer[currentPlayer] == 0) {
+                gameOverPlayer[currentPlayer] = true;
+            }
+        }
+
+        function computeExtraLife() {
+            if (livesPlayer[currentPlayer] + 1 > maxLives) {
+                return;
+            }
+            if (scorePlayer[currentPlayer] >= pointsFirstExtraLife + extraLivesPlayer[currentPlayer] * pointsAdditionalLife) {
+                extraLivesPlayer[currentPlayer] += 1;
+                livesPlayer[currentPlayer] += 1;
+                playSound('extraLife');
+            }
+        }
+
+        function highScoreRank() {
+            for (let i = 0; i < highScoresTable.length; i++) {
+                if (scorePlayer[currentPlayer] >= highScoresTable[i].score) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function removeCoin(coins) {
+            creditsNumber -= coins;
+            if (creditsNumber == 0) { pushStart = false; }
+            document.getElementById('nbCredits').value = creditsNumber;
+        }
+
+        function addCoin() {
+            creditsNumber += 1;
+            document.getElementById('nbCredits').value = creditsNumber;
+            playSound('coin');
+            pushStart = true;
+        }
+
+        function setNumberCredits(credits) {
+            creditsNumber = credits;
+            if (creditsNumber == 0) {
+                pushStart = false;
+            } else {
+                pushStart = true;
+            }
+        }
+
+        function startNewGame() {
+            removeCoin(nbPlayer);
+            scorePlayer = [0, 0];
+            startNewGamePlayer(0);
+        }
+
+        function startNewGamePlayer(playerIndex) {
+            currentPlayer = playerIndex;
+            currentLevelPlayer[currentPlayer] = 0;
+            currentRoundPlayer[currentPlayer] = 0;
+            gameOverPlayer[currentPlayer] = false;
+            livesPlayer[currentPlayer] = defaultStartLives;
+            extraLivesPlayer[currentPlayer] = 0;
+            rankPlayer[currentPlayer] = -1;
+            prepareMainBoard();
+            sceneController('level');
+            gameStartedPlayer[currentPlayer] = true;
+        }
+
+        function checkRoundCompletion() {
+            let targetColorIndex = targetTopColorIndex();
+            for (let i = 0; i < topColorIndexArray[currentPlayer].length; i++) {
+                if (topColorIndexArray[currentPlayer][i] !== targetColorIndex) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function getPyramidCurrentCubeIndex(character) {
+            return (character.currentRow - 1) * character.currentRow / 2 + character.currentCube - 1;
+        }
+
+        function getCurrentCubeIndex(character, nbCubesWidth) {
+            // let currentCharacterCube = character.currentCube;
+            // if (character.currentRow % 2 == 0) {
+            //     currentCharacterCube -= 1;
+            // }
+            console.log(getTotalCubesNumber(nbCubesWidth, character.currentRow - 1), character.currentCube, getTotalCubesNumber(nbCubesWidth, character.currentRow - 1) + character.currentCube - 1);
+            return getTotalCubesNumber(nbCubesWidth, character.currentRow - 1) + character.currentCube - 1;
+        }
+
+        function computeSinCosCube() {
+            sin30 = cubeSize * Math.sin(30 * Math.PI / 180);
+            cos30 = cubeSize * Math.cos(30 * Math.PI / 180);
+        }
+
+        function updateObjects(secondsPassed) {
+            for (let i = 0; i < objectsList.length; i++) {
+                let object = objectsList[i];
+                if (object.show == true) {
+                    computeObjectPosition(object, secondsPassed, object.height);
+                }
+            }
+        }
+
+        function computeObjectPosition(object, secondsPassed, offLimit, setTarget = 'off', targetX = 0, targetY = 0, targetYHitDown = true) {
+            if (object.y >= canvas.height + offLimit) {
+                object.y = canvas.height + offLimit;
+                return true;
+            }
+            if (object.y <= - offLimit) {
+                object.y = - offLimit;
+                return true;
+            }
+            if (object.x >= canvas.width + offLimit) {
+                object.x = canvas.width + offLimit;
+                return true;
+            }
+            if (object.x <= - offLimit) {
+                object.x = - offLimit;
+                return true;
+            }
+            switch (setTarget) {
+                case 'off':
+                    break;
+                case 'x':
+                    if (object.vx > 0 && (object.x - targetX) > 0) {
+                        object.x = targetX;
+                        object.vx = 0;
+                        return true;
+                    }
+                    if (object.vx < 0 && (object.x - targetX) < 0) {
+                        object.x = targetX;
+                        object.vx = 0;
+                        return true;
+                    }
+                    if (object.vx == 0 && object.x == targetX) {
+                        return true;
+                    }
+                    break;
+                case 'y':
+                    if (object.vy > 0 && (object.y - targetY) > 0) {
+                        object.y = targetY;
+                        object.vy = 0;
+                        return true;
+                    }
+                    if (object.vy < 0 && (object.y - targetY) < 0) {
+                        object.y = targetY;
+                        object.vy = 0;
+                        return true;
+                    }
+                    if (object.vy == 0 && object.y == targetY) {
+                        return true;
+                    }
+                    break;
+                case 'xy':
+                    if (object.vx > 0 && (object.x - targetX) > 0) {
+                        object.x = targetX;
+                        object.vx = 0;
+                    } else if (object.vx < 0 && (object.x - targetX) < 0) {
+                        object.x = targetX;
+                        object.vx = 0;
+                    }
+                    if (object.vy > 0 && (object.y - targetY) > 0 && targetYHitDown == true) {
+                        object.y = targetY;
+                        object.vy = 0;
+                    } else if (object.vy < 0 && (object.y - targetY) < 0 && targetYHitDown == false) {
+                        object.y = targetY;
+                        object.vy = 0;
+                    }
+                    if (object.vx == 0 && object.x == targetX && object.vy == 0 && object.y == targetY) {
+                        return true;
+                    }
+                    break;
+            }
+            object.x += object.vx * secondsPassed;
+            object.y += gravity * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
+            object.vy += gravity * secondsPassed;
+            return false;
+        }
+
+        function computePositions() {
+            for (let player = 0; player < maxPlayers; player++) {
+                resetQbertPostion(player);
+            }
+            computePyramidPosition(pyramidHorizontalAlign, pyramidVerticalAlign);
+            for (let player = 0; player < maxPlayers; player++) {
+                computeQbertStartPosition(player);
+            }
+        }
+
+        function resetQbertPostion(player) {
+            qbert[player].currentRow = startRow;
+            qbert[player].currentCube = startCube;
+            qbert[player].showOnTop = true;
+            qbert[player].moving = false;
+            qbert[player].knelt = false;
+            qbert[player].currentDirection = 'down';
+            qbert[player].height = qbertSize;
+            qbert[player].width = qbertSize;
+        }
+
+        function computePyramidPosition(horizontalAlignment, verticalAlignment, x = 0, y = 0) {
+            const pyramidHeight = (sin30 + cubeHeight) * pyramidLevels + sin30;
+            const pyramidWidth = (2 * cos30) * pyramidLevels;
+
+            switch (horizontalAlignment) {
+                case 'center':
+                    pyramidPosX = (canvas.width - pyramidWidth) / 2;                  
+                    break;
+                case 'left':
+                    pyramidPosX = 0;
+                    break;
+                case 'right':
+                    pyramidPosX = canvas.width - pyramidWidth;
+                    break;
+                case 'custom':
+                    pyramidPosX = x;
+                    break;
+                default: // default = center
+                    pyramidPosX = (canvas.width - pyramidWidth) / 2;
+                    break;
+            }
+
+            switch (verticalAlignment) {
+                case 'center':
+                    pyramidPosY = (canvas.height - pyramidHeight) / 2;
+                    break;
+                case 'top':
+                    pyramidPosY = 0;
+                    break;
+                case 'bottom':
+                    pyramidPosY = canvas.height - pyramidHeight;
+                    break;
+                case 'custom':
+                    pyramidPosY = y;
+                    break;
+                default: // default = center
+                    pyramidPosY = (canvas.height - pyramidHeight) / 2;
+                    break;
+            }
+        }
+
+        function computeQbertStartPosition(player) {
+            maxStartLevel = Math.min(pyramidLevels, qbert[player].currentRow);
+            maxStartBlock = Math.min(qbert[player].currentCube, maxStartLevel);
+            blockHorizontalOffset = 2 * (maxStartBlock - 1);
+            firstBlockHorizontalOffset = pyramidLevels - (maxStartLevel - 1);
+            qbert[player].x = (firstBlockHorizontalOffset + blockHorizontalOffset) * cos30 + pyramidPosX - qbertSize / 2;
+            qbert[player].y = maxStartLevel * sin30 + (cubeHeight * (maxStartLevel - 1)) + pyramidPosY - qbertSize;
+            flyingTargetX = qbert[player].x;
+            flyingTargetY = qbert[player].y - cubeHeight - 2 * sin30;
+        }
+
+        function goToNextRound() {
+            if (currentRoundPlayer[currentPlayer] + 1 > levels[currentLevelPlayer[currentPlayer]].rounds.length - 1) {
+                if (currentLevelPlayer[currentPlayer] + 1 <= levels.length - 1) {
+                    currentLevelPlayer[currentPlayer] += 1;
+                    currentRoundPlayer[currentPlayer] = 0;
+                } else {
+                    currentRoundPlayer[currentPlayer] = 0;
+                }
+                prepareMainBoard();
+                sceneController('level');
+            } else {
+                currentRoundPlayer[currentPlayer] += 1;
+                prepareMainBoard();
+                sceneController('main');
+            }
+        }
+
+        function prepareMainBoard() {
+            levelSetup();
+            updateColorInputValues();
+            buildTopColorIndexArray();
+            computePositions();
+            updateLevelRoundInputValues();
+        }
+
+        function levelSetup() {
+            setColorPaletteLevel(currentLevelPlayer[currentPlayer], currentRoundPlayer[currentPlayer]);
+            setDiskColorList();
+            levelType[currentPlayer] = levels[currentLevelPlayer[currentPlayer]].type;
+            remainingFlyingDisksCounter = 0;
+            setDisksList();
+            updateLevelRoundInputValues();
+        }
+
+        function setDisksList() {
+            disksPositionList = levels[currentLevelPlayer[currentPlayer]].rounds[currentRoundPlayer[currentPlayer]].disks;
+            disksPresenceList = [];
+            for (let i = 0; i < disksPositionList.length; i++) {
+                disksPresenceList.push(true);
+            }
+        }
+
+        function addObject(objectName) {
+            let newObject = new Character(objectName);
+        }
+
+        function setColorPaletteLevel(playerLevel, playerRound) {
+            let currentRound = levels[playerLevel].rounds[playerRound];
+            currentColorPalette[currentPlayer] = currentRound.colorPalette;
+            currentTopColorIndex[currentPlayer] = 0;
+            leftColor = qbertColorsPalettes[currentColorPalette[currentPlayer]].leftColor;
+            rightColor = qbertColorsPalettes[currentColorPalette[currentPlayer]].rightColor;
+            initialiseTopColorList();
+        }
+
+        function initialiseTopColorList() {
+            let currentRound = levels[currentLevelPlayer[currentPlayer]].rounds[currentRoundPlayer[currentPlayer]];
+            topColorList = [];
+            for (let i = 0; i < currentRound.topColorIndex.length; i++) {
+                topColorList.push(qbertColorsPalettes[currentColorPalette[currentPlayer]].topColor[currentRound.topColorIndex[i]]);
+            }
+            topColor = topColorList[0];
+        }
+
+        function setDiskColorList(colorPaletteIndex = currentColorPalette[currentPlayer]) {
+            let topColorPaletteList = qbertColorsPalettes[colorPaletteIndex].topColor;
+            let leftColorPalette = qbertColorsPalettes[colorPaletteIndex].leftColor;
+            let rightColorPalette = qbertColorsPalettes[colorPaletteIndex].rightColor;
+            diskBottomColor = leftColorPalette;
+
+            diskTopColorList = [];
+            diskTopColorList.push(rightColorPalette);
+            for (let i = 0; i < topColorPaletteList.length; i++) {
+                diskTopColorList.push(topColorPaletteList[i]);
+            }
+        }
+
+        function setColorPalette(colorPaletteIndex, colorTopIndex = currentTopColorIndex[currentPlayer]) {
+            if (colorPaletteIndex < 0) { colorPaletteIndex = 0; }
+            if (colorPaletteIndex > qbertColorsPalettes.length ) { colorPaletteIndex = 0; }
+            if (colorTopIndex < 0) { colorTopIndex = 0; }
+            if (colorTopIndex > 2) { colorTopIndex = 0; }
+
+            currentColorPalette[currentPlayer] = colorPaletteIndex;
+            currentTopColorIndex[currentPlayer] = colorTopIndex;
+
+            leftColor = qbertColorsPalettes[colorPaletteIndex].leftColor;
+            rightColor = qbertColorsPalettes[colorPaletteIndex].rightColor;
+            topColorList = qbertColorsPalettes[colorPaletteIndex].topColor;
+            topColor = topColorList[colorTopIndex];
+        }
+
+        function populateSelectColorPalettes() {
+            let selectList = document.getElementById('qbertColorPalette');
+            for (let i = 0; i < qbertColorsPalettes.length; i++) {
+                let option = document.createElement('option');
+                option.value = i;
+                option.innerHTML = 'Palette #' + (i + 1);
+                selectList.appendChild(option);
+            }
+            selectList.selectedIndex = currentColorPalette[currentPlayer];
+        }
+
+        function populateSelectTopColor() {
+            let selectList = document.getElementById('qbertColorPaletteTop');
+            for (let i = 0; i < 3; i++) {
+                let option = document.createElement('option');
+                option.value = i;
+                option.innerHTML = 'Top color #' + (i + 1);
+                selectList.appendChild(option);
+            }
+            selectList.selectedIndex = currentTopColorIndex[currentPlayer];
+        }
+
+        function populateLevelsList() {
+            let selectList = document.getElementById('qbertLevel');
+            for (let i = 0; i < levels.length; i++) {
+                let option = document.createElement('option');
+                option.value = i;
+                option.innerHTML = 'Level #' + (i + 1);
+                selectList.appendChild(option);
+            }
+            selectList.selectedIndex = currentLevelPlayer[currentPlayer];
+        }
+
+        function populateRoundsList() {
+            let selectList = document.getElementById('qbertRound');
+            for (let i = 0; i < levels[currentLevelPlayer[currentPlayer]].rounds.length; i++) {
+                let option = document.createElement('option');
+                option.value = i;
+                option.innerHTML = 'Round #' + (i + 1);
+                selectList.appendChild(option);
+            }
+            selectList.selectedIndex = currentRoundPlayer[currentPlayer];
+        }
+
+        function updateLevelRoundInputValues() {
+            document.getElementById('qbertLevel').selectedIndex = currentLevelPlayer[currentPlayer];
+            document.getElementById('qbertRound').selectedIndex = currentRoundPlayer[currentPlayer];
+            document.getElementById('qbertLevelType').selectedIndex = levelType[currentPlayer] - 1;
+        }
+
+        function updateColorInputValues() {
+            document.getElementById('colorLeft').value = leftColor;
+            document.getElementById('colorRight').value = rightColor;
+            document.getElementById('colorTop').value = topColor;
+        }
+
+        function buildTopColorIndexArray() {
+            let nbCubes = pyramidLevels * (pyramidLevels + 1) / 2;
+            for (let player = 0; player < maxPlayers; player++) {
+                topColorIndexArray[player] = new Array(nbCubes);
+                for (let i = 0; i < nbCubes; i++) {
+                    topColorIndexArray[player][i] = currentTopColorIndex[currentPlayer];
+                }
+            } 
+        }
+
+        function setTopColorIndexArray(topColorIndex) {
+            for (let i = 0; i < topColorIndexArray[currentPlayer].length; i++) {
+                    topColorIndexArray[currentPlayer][i] = topColorIndex;
+            }
+        }
+
+        function cycleTopColorList() {
+            let firstColor = topColorList.shift();
+            topColorList.push(firstColor);
+        }
+
+        function cycleDiskTopColorList() {
+            let lastColor = diskTopColorList.pop();
+            diskTopColorList.unshift(lastColor);
+        }
+
+        function outOfBounds() {
+            if (qbert[currentPlayer].currentRow < 1) { return true }
+            if (qbert[currentPlayer].currentRow > pyramidLevels) { return true }
+            if (qbert[currentPlayer].currentCube < 1) { return true }
+            if (qbert[currentPlayer].currentCube > qbert[currentPlayer].currentRow) { return true }
+            return false;
+        }
+
+        function isQbertOnDisk() {
+            if (qbert[currentPlayer].currentRow > pyramidLevels) { return false }
+            if (qbert[currentPlayer].currentCube >= 1 && qbert[currentPlayer].currentCube <= qbert[currentPlayer].currentRow) { return false }
+            for (let i = 0; i < disksPositionList.length; i++) {
+                if (disksPresenceList[i] == true) {
+                    diskPosition = disksPositionList[i].substring(0,1);
+                    diskRow = parseInt(disksPositionList[i].substring(1));
+                    qbertPosition = 'r';
+                    if (qbert[currentPlayer].currentCube < 1) {
+                        qbertPosition = 'l';
+                    }
+                    if (diskPosition == qbertPosition && diskRow - 1 == qbert[currentPlayer].currentRow) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function getTotalCubesNumber(nbCubesWidth, nbLevels) {
+            return nbCubesWidth * (nbLevels - Math.floor(nbLevels / 2)) + (nbCubesWidth - 1) * Math.floor(nbLevels / 2);
+        }
+
+        function updateCubeTopColor() {
+            if (outOfBounds() == true) { return; }
+            if (isQbertOnDisk() == true) { return; }
+
+            let cubeNumber = getPyramidCurrentCubeIndex(qbert[currentPlayer]);
+            if (cubeNumber > topColorIndexArray[currentPlayer].length - 1 || cubeNumber < 0) { return }
+
+            defineCubeTopColorIndex(topColorIndexArray[currentPlayer], cubeNumber);
+        }
+
+        function defineCubeTopColorIndex(colorIndexArray, cubeNumber, countPoints = true) {
+            const currentCubeTopColorIndex = colorIndexArray[cubeNumber];
+            let topColorIndexLimit = currentTopColorIndex[currentPlayer];
+            switch (levelType[currentPlayer]) {
+                case 1:
+                    topColorIndexLimit = (currentTopColorIndex[currentPlayer] + 1) % topColorList.length;
+                    if (currentCubeTopColorIndex !== topColorIndexLimit) {
+                        colorIndexArray[cubeNumber] = (currentCubeTopColorIndex + 1) % topColorList.length;
+                        if (countPoints == false) {
+                            break;
+                        }
+                        updateScore(pointsTargetColor);
+                    }
+                    break;
+                case 2:
+                    topColorIndexLimit = (currentTopColorIndex[currentPlayer] + 2) % topColorList.length;
+                    if (currentCubeTopColorIndex !== topColorIndexLimit) {
+                        colorIndexArray[cubeNumber] = (currentCubeTopColorIndex + 1) % topColorList.length;
+                        if (countPoints == false) {
+                            break;
+                        }
+                        if (colorIndexArray[cubeNumber] == topColorIndexLimit) {
+                            updateScore(pointsTargetColor);
+                        } else {
+                            updateScore(pointsIntermediateColor);
+                        }
+                    }
+                    break;
+                case 3:
+                    topColorIndexLimit = (currentTopColorIndex[currentPlayer] + 1) % topColorList.length;
+                    if (currentCubeTopColorIndex === topColorIndexLimit) {
+                        colorIndexArray[cubeNumber] = (currentCubeTopColorIndex - 1 + topColorList.length) % topColorList.length;
+                    } else if (currentCubeTopColorIndex == currentTopColorIndex[currentPlayer]) {
+                        colorIndexArray[cubeNumber] = (currentCubeTopColorIndex + 1) % topColorList.length;
+                        if (countPoints == false) {
+                            break;
+                        }
+                        updateScore(pointsTargetColor);
+                    }
+                    break;
+                case 4:
+                    topColorIndexLimit = (currentTopColorIndex[currentPlayer] + 2) % topColorList.length;
+                    if (currentCubeTopColorIndex === topColorIndexLimit) {
+                        colorIndexArray[cubeNumber] = (currentCubeTopColorIndex - 1 + topColorList.length) % topColorList.length;
+                    } else {
+                        colorIndexArray[cubeNumber] = (currentCubeTopColorIndex + 1) % topColorList.length;
+                        if (countPoints == false) {
+                            break;
+                        }
+                        if (colorIndexArray[cubeNumber] === topColorIndexLimit) {
+                            updateScore(pointsTargetColor);
+                        } else {
+                            updateScore(pointsIntermediateColor);
+                        }
+                    }
+                    break;
+                case 5:
+                    topColorIndexLimit = (currentTopColorIndex[currentPlayer] + 2) % topColorList.length;
+                    topColorIndexIntermediate = (currentTopColorIndex[currentPlayer] + 1) % topColorList.length;
+                    colorIndexArray[cubeNumber] = (currentCubeTopColorIndex + 1) % topColorList.length;
+                    if (countPoints == false) {
+                        break;
+                    }
+                    if (colorIndexArray[cubeNumber] === topColorIndexLimit) {
+                        updateScore(pointsTargetColor);
+                    } else if (colorIndexArray[cubeNumber] === topColorIndexIntermediate) {
+                        updateScore(pointsIntermediateColor);
+                    }
+                    break;
+            }
+        }
+
+        function targetTopColorIndex() {
+            switch (levelType[currentPlayer]) {
+                case 1:
+                case 3:
+                    return (currentTopColorIndex[currentPlayer] + 1) % topColorList.length;
+                case 2:
+                case 4:
+                case 5:                
+                    return (currentTopColorIndex[currentPlayer] + 2) % topColorList.length;
+            }
+        }
+
+// ======== Region : Scene drawing functions ========
+
+        function drawMainScene() {
+            clearScreen();
+            drawBackground(currentMainSceneBackgroundColor, frameStrokeColor);
+            drawDisks();
+            if (qbert[currentPlayer].showOnTop == false  && showBonus == false) {
+                drawQbert(qbert[currentPlayer].currentDirection, qbertSize, qbert[currentPlayer].x, qbert[currentPlayer].y, qbert[currentPlayer].knelt);
+            }
+            drawPyramid(pyramidPosX, pyramidPosY, pyramidLevels);
+            drawChangeTo(screenPaddingX, pyramidPosY);
+            drawScore();
+            drawLevelRound();
+            drawLives();
+            if (showBonus == true) {
+                drawBonus();
+            }
+            if (showFlyingDisk == true) {
+                drawDisk(qbert[currentPlayer].x + offsetDiskQbertX + 5, qbert[currentPlayer].y + offsetDiskQbertY - 5, diskDiameter);
+            }
+            if (qbert[currentPlayer].showOnTop == true && showBonus == false) {
+                drawQbert(qbert[currentPlayer].currentDirection, qbertSize, qbert[currentPlayer].x, qbert[currentPlayer].y, qbert[currentPlayer].knelt);
+            }
+            if (gameOverPlayer[currentPlayer] == true) {
+                drawGameOver();
+            }
+        }
+
+        function drawTitleScene() {
+            clearScreen();
+            drawBackground(backgroundTitleColor, backgroundTitleColor);
+            drawCredits();
+            drawPushStart();
+            drawTitleCard();
+            drawDisk(qbertTitlePosX + offsetDiskQbertX, qbertTitlePosY + offsetDiskQbertY, diskDiameter);
+            drawQbert('faceright', qbertSize, qbertTitlePosX, qbertTitlePosY, false);
+        }
+
+        function drawInstructionsScene() {
+            clearScreen();
+            drawBackground(backgroundTitleColor, backgroundTitleColor);
+            drawCredits();
+            drawPushStart();
+            drawQbertLogo(screenPaddingX, screenPaddingY, 250, 80);
+            drawInstructions();
+            drawQbert('faceright', qbertSize, qbertTitlePosX, qbertTitlePosY, instructionsBallHit);
+            drawObjects();
+            if (showSwear == true) {
+                drawSwear(qbertTitlePosX - 30, qbertTitlePosY - 75, 150, 75);
+            }
+        }
+
+        function drawLevelScene() {
+            clearScreen();
+            drawBackground(backgroundMainColor, frameStrokeColor);
+            drawPlayground((canvas.width - 6 * cos30) / 2, screenPaddingY + qbertSize + levelSceneTopPadding, 3, 3, levelPlaygroundCubes, levelPlaygroundCubesColors);
+            drawLevelLogo((canvas.width - 24 * letterLevelStrokeWidth) / 2, canvas.height - screenPaddingY - 11 * letterLevelStrokeHeight, leftColor, rightColor, topColor);
+            if (levelNumberShow == true) {
+                drawLevelNumber((canvas.width - levelNumberTargetWidth) / 2, canvas.height - screenPaddingY - 3.5 * letterLevelStrokeHeight);
+            }
+            drawObjects();
+        }
+
+        function drawDemoScene() {
+            clearScreen();
+            drawBackground(backgroundMainColor, frameStrokeColor);
+            drawChangeTo(screenPaddingX, 200);
+            drawCredits();
+            drawPushStart();
+            drawQbertLogo(screenPaddingX, screenPaddingY, 250, 80);
+        }
+
+        function drawHighScoresScene() {
+            clearScreen();
+            drawBackground(backgroundMainColor, frameStrokeColor);
+            drawHighScoresTitle();
+            drawHighScoresList(screenPaddingX, 200);
+            ctx.font = fontsList.bold;
+            let textWidth = ctx.measureText(highScoresString).width;
+            let titlePosX = (canvas.width - textWidth) / 2;
+            drawQbert('faceleft', 50, titlePosX - 50 - spaceWidthHighScore, screenPaddingY + highScoreTitlePaddingTop - 25, false);
+            drawQbert('faceright', 50, titlePosX + textWidth + spaceWidthHighScore, screenPaddingY + highScoreTitlePaddingTop - 25, false);
+        }
+
+        function drawEnterNameScene() {
+            clearScreen();
+            drawBackground(backgroundMainColor, frameStrokeColor);
+            drawEnterNameTitle(enterNameTitlePosY);
+            drawEnterNameInfoText(enterNameInfoTextPosY);
+            if (rankPlayer[currentPlayer] != 0) {
+                drawUseIndications(enterNameInfoTextPosY + 8 * fontHeightSpacing);
+            }
+            drawEnterNameLetters(enterNameLettersPosX, enterNameLettersPosY);
+            drawBall(enterNameGreenBallPosX, enterNameGreenBallPosY, enterNameGreenBallSize, enterNameGreenBallSize, 'green', true);
+            drawEnterNameHighlightLetter(fontsColors.red, underlineHeightPx);
+            drawRemainingTime(enterNameLettersPosX, canvas.height - screenPaddingY - fontDefaultSize);
+            drawInitials(canvas.width - enterNameLettersPosX - ctx.measureText(spacingCharacter.repeat(3)).width, canvas.height - screenPaddingY - fontDefaultSize);
+        }
+
+// ======== Region : drawing sub-functions for scene drawing functions ========
+
+        function drawEnterNameTitle(posY) {
+            let titleToWrite = enterNameTitleString[1];
+            if (rankPlayer[currentPlayer] == 0) {
+                titleToWrite = enterNameTitleString[0];
+            }
+            drawQbertFontText(titleToWrite, (canvas.width - titleToWrite.length * 50) / 2, posY, 50);
+        }
+
+        function drawEnterNameInfoText(posY) {
+            let startPosX;
+            let currentPosY = posY;
+            let textToWrite = '';
+            let currentTextWidth = 0;
+            let index = 1;
+            if (rankPlayer[currentPlayer] == 0) {
+                index = 0;
+            }
+            for (let i = 0; i < messageEnterNameString[index].length; i++) {
+                ctx.font = fontsList.bold;
+                ctx.fillStyle = fontsColors.purple;
+                textToWrite = messageEnterNameString[index][i];
+                if (i == 1) {
+                    if (index == 1) {
+                        textToWrite += String(rankPlayer[currentPlayer] + 1);
+                    }
+                    startPosX = (canvas.width - ctx.measureText(textToWrite).width) / 2;
+                    ctx.fillText(messageEnterNameString[index][i], startPosX, currentPosY);
+                    if (index == 1) {
+                        startPosX += ctx.measureText(messageEnterNameString[index][i]).width;
+                        ctx.font = fontsList.standard;
+                        ctx.fillStyle = fontsColors.orange;
+                        ctx.fillText(rankPlayer[currentPlayer] + 1, startPosX, currentPosY);
+                    }
+                    currentPosY += 2 * fontHeightSpacing;
+                    textToWrite = highScoresRankString[rankPlayer[currentPlayer]];
+                    if (rankPlayer[currentPlayer] < 0) {
+                        textToWrite = highScoresRankErrorString;
+                    }
+                    startPosX = (canvas.width - ctx.measureText(textToWrite).width) / 2;
+                    if (index == 0) {
+                        drawUnderlineText(textToWrite, startPosX, currentPosY, fontsColors.purple, fontsList.bold, fontsColors.red, 5);
+                    } else {
+                        ctx.font = fontsList.bold;
+                        ctx.fillStyle = fontsColors.purple;
+                        ctx.fillText(textToWrite, startPosX, currentPosY);
+                    }
+                    currentPosY += 2 * fontHeightSpacing;
+                } else {
+                    startPosX = (canvas.width - ctx.measureText(textToWrite).width) / 2;
+                    ctx.fillText(textToWrite, startPosX, currentPosY);
+                    currentPosY += fontHeightSpacing;
+                }
+            }
+        }
+
+        function drawUseIndications(posY) {
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            let currentPosY = posY;
+            let currentPosX = 2 * ctx.measureText(useIndicationsString[0] + spacingCharacter.repeat(3)).width + ctx.measureText(spacingCharacter.repeat(3)).width;
+            let longestWord = '';
+            for (let i = 1; i < useIndicationsString.length; i++) {
+                let listWords = useIndicationsString[i].split(' ');
+                for (let j = 0; j < listWords.length; j++) {
+                    if (listWords[j].length > longestWord.length) {
+                        longestWord = listWords[j];
+                    }
+                }
+                currentPosX += ctx.measureText(longestWord).width;
+                longestWord = '';
+            }
+            currentPosX = (canvas.width - currentPosX) / 2;
+            ctx.fillText(useIndicationsString[0] + ' ', currentPosX, currentPosY);
+            currentPosX += ctx.measureText(useIndicationsString[0] + ' ').width;
+            drawCascadeText(eraseString, currentPosX, currentPosY - 5, fontsColors.blue, fontsList.smallbold, fontSmallSize);
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            currentPosX += ctx.measureText(spacingCharacter.repeat(2)).width;
+            let listWords = useIndicationsString[1].split(' ');
+            longestWord = '';
+            for (let i = 0; i < listWords.length; i++) {
+                ctx.fillText(listWords[i], currentPosX, currentPosY);
+                if (listWords[i].length > longestWord.length) {
+                    longestWord = listWords[i];
+                }
+                currentPosY += fontHeightSpacing;
+            }
+            currentPosY = posY;
+            currentPosX += ctx.measureText(longestWord + spacingCharacter.repeat(3)).width;
+            ctx.fillText(useIndicationsString[0] + ' ', currentPosX, currentPosY);
+            currentPosX += ctx.measureText(useIndicationsString[0] + ' ').width;
+            drawCascadeText(endString, currentPosX, currentPosY - 5, fontsColors.green, fontsList.smallbold, fontSmallSize);
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            currentPosX += ctx.measureText(spacingCharacter.repeat(2)).width;
+            listWords = useIndicationsString[2].split(' ');
+            for (let i = 0; i < listWords.length; i++) {
+                ctx.fillText(listWords[i], currentPosX, currentPosY);
+                currentPosY += fontHeightSpacing;
+            }
+        }
+
+        function drawEnterNameLetters(posX, posY) {
+            let currentLine = 1;
+            let textToWrite = '';
+            let currentPosX = posX;
+            let currentPosY = posY;
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            for (let i = 65; i < 91; i++) {
+                textToWrite = '';
+                for (let j = 0; j < lettersByRow; j++) {
+                    if (i == 91) {
+                        textToWrite += String.fromCharCode(32) + spacingCharacter.repeat(spaceBetweenCharacters);
+                        textToWrite += String.fromCharCode(46) + spacingCharacter.repeat(spaceBetweenCharacters);
+                        break;
+                    }
+                    textToWrite += String.fromCharCode(i) + spacingCharacter.repeat(spaceBetweenCharacters);
+                    i++;
+                }
+                if (currentLine % 2 == 0) {
+                    textToWrite = spacingCharacter.repeat(spaceBeforeRow) + textToWrite;
+                }
+                ctx.fillText(textToWrite, currentPosX, currentPosY);
+                currentPosY += 2 * fontDefaultSize;
+                currentLine++;
+                i--;
+            }
+            currentPosX += ctx.measureText(textToWrite).width;
+            currentPosY -= 3 * fontDefaultSize - fontSmallSize - 2;
+            drawCascadeText(eraseString, currentPosX, currentPosY, fontsColors.blue, fontsList.smallbold, fontSmallSize);
+            ctx.font = fontsList.bold;
+            currentPosX += ctx.measureText(spacingCharacter.repeat(spaceBetweenCharacters) + 1).width;
+            drawCascadeText(endString, currentPosX, currentPosY, fontsColors.green, fontsList.smallbold, fontSmallSize);
+        }
+
+        function drawEnterNameHighlightLetter(underlineColor, underlineHeight) {
+            if (currentGreenBallRow == enterNameLettersRows && currentGreenBallLetter > 4) { return; }
+            ctx.font = fontsList.bold;
+            let highlightPosX = enterNameLettersPosX + (currentGreenBallLetter - 1) * ctx.measureText(spacingCharacter.repeat(spaceBetweenCharacters + 1)).width;
+            if (currentGreenBallRow % 2 == 0) {
+                highlightPosX += ctx.measureText(spacingCharacter.repeat(spaceBeforeRow)).width;
+            }
+            let highlightPosY = enterNameLettersPosY + (currentGreenBallRow - 1) * 2 * fontDefaultSize;
+            let textWidth = ctx.measureText('A').width;
+            ctx.fillStyle = underlineColor;
+            ctx.fillRect(highlightPosX, highlightPosY + fontHeightSpacing / 2 - underlineHeight, textWidth, underlineHeight);
+        }
+
+        function drawRemainingTime(posX, posY) {
+            let currentPosX = posX;
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            ctx.fillText(timeString + spacingCharacter, currentPosX, posY);
+            currentPosX += ctx.measureText(timeString + spacingCharacter).width;
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.orange;
+            let stringTimer = '0' + String(Math.round(enterNameTimer));
+            stringTimer = stringTimer.slice(-2);
+            ctx.fillText(stringTimer, currentPosX, posY);
+        }
+
+        function drawInitials(posX, posY) {
+            let textToWrite = enterNameInitials;
+            if (textToWrite == '') {
+                textToWrite = ' ';
+            }
+            drawUnderlineText(textToWrite, posX, posY, fontsColors.purple, fontsList.bold, fontsColors.red, underlineHeightPx);
+        }
+
+        function drawCascadeText(text, posX, posY, textColor, textStyle, fontSize) {
+            let currentPosX = posX;
+            let currentPosY = posY;
+            ctx.font = textStyle;
+            ctx.fillStyle = textColor;
+            for (let i = 0; i < text.length; i++) {
+                ctx.fillText(text.substr(i,1), currentPosX, currentPosY);
+                currentPosX += spacingCascadeText;
+                currentPosY += fontSize;
+            }
+        }
+
+        function drawHighScoresTitle() {
+            ctx.font = fontsList.bold;
+            let textWidth = ctx.measureText(highScoresString).width;
+            let titlePosX = (canvas.width - textWidth) / 2;
+            let titlePosY = screenPaddingY + highScoreTitlePaddingTop;
+            let wordsList = highScoresString.split(' ');
+            for (let i = 0; i < wordsList.length; i++) {
+                drawUnderlineText(wordsList[i], titlePosX, titlePosY, fontsColors.purple, fontsList.bold, fontsColors.red, underlineHeightPx);
+                titlePosX += ctx.measureText(wordsList[i]).width;
+                if (i < wordsList.length - 1) {
+                    titlePosX += ctx.measureText(' ').width;
+                }
+            }
+        }
+
+        function drawHighScoresList(x, y) {
+            let currentPosX = x;
+            let currentPosY = y;
+            ctx.font = fontsList.standard;
+            let startPosXList = (canvas.width - (2 * ctx.measureText(placeholderHighScoreString).width + spaceWidthHighScore)) / 2;
+            let currentColumn = 1;
+            for (i = 0; i < highScoresTable.length; i++) {
+                if (i == 0) {
+                    let targetQbertFontHeight = 50;
+                    currentPosX = (canvas.width - (targetQbertFontHeight * 3 + spaceWidthHighScore + ctx.measureText(highScoresTable[i].score).width)) / 2;
+                    drawQbertFontText(highScoresTable[i].name, currentPosX, currentPosY, targetQbertFontHeight);
+                    currentPosX += targetQbertFontHeight * 3 + spaceWidthHighScore;
+                    currentPosY += (letterOriginalHeight - fontHeightSpacing - 10) / 2;
+                    ctx.font = fontsList.standard;
+                    ctx.fillStyle = fontsColors.orange;
+                    ctx.fillText(highScoresTable[i].score, currentPosX, currentPosY);
+                    currentPosX = startPosXList;
+                    currentPosY += 2 * targetQbertFontHeight;
+                } else {
+                    drawHighScoreLine(i, currentPosX, currentPosY);
+                    if (currentColumn == 1) {
+                        currentPosX += ctx.measureText(placeholderHighScoreString).width + spaceWidthHighScore;
+                        currentColumn += 1;
+                    } else {
+                        currentPosX = startPosXList;
+                        currentPosY += spaceHeightHighScore;
+                        currentColumn = 1;
+                    }
+                }
+                
+            }
+        }
+
+        function drawHighScoreLine(index, x, y) {
+            let currentPosX = x;
+            let textToWrite = ("  " + String(index + 1)).slice(-2);
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(textToWrite, currentPosX, y);
+            currentPosX += ctx.measureText(textToWrite).width;
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.red;
+            textToWrite = ') ';
+            ctx.fillText(textToWrite, currentPosX, y);
+            currentPosX += ctx.measureText(textToWrite).width;
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            textToWrite = highScoresTable[index].name + ' ';
+            ctx.fillText(textToWrite, currentPosX, y);
+            currentPosX += ctx.measureText(textToWrite).width;
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.orange;
+            textToWrite = highScoresTable[index].score + ' ';
+            ctx.fillText(textToWrite, currentPosX, y);
+        }
+
+        function drawUnderlineText(text, x, y, textColor, textStyle, underlineColor, underlineHeight) {
+            ctx.fillStyle = textColor;
+            ctx.font = textStyle;
+            ctx.fillText(text, x, y);
+            let textWidth = ctx.measureText(text).width;
+            ctx.fillStyle = underlineColor;
+            ctx.fillRect(x, y + fontHeightSpacing / 2 - underlineHeight, textWidth, underlineHeight);
+        }
+
+        function drawQbertFontText(text, x, y, fontHeight) {
+            let currentPosX = x;
+            text = text.toUpperCase();
+            for (let i = 0; i < text.length; i++) {
+                let currentCharacterCode = text.charCodeAt(i);
+                if (currentCharacterCode == 32) {
+                    currentPosX += fontHeight;
+                } else {
+                    if (currentCharacterCode == 46) { currentCharacterCode = 91}
+                    else if (currentCharacterCode == 33) { currentCharacterCode = 92}
+                    else if (currentCharacterCode == 45) { currentCharacterCode = 93}
+                    else if (currentCharacterCode < 65 || currentCharacterCode > 93) { currentCharacterCode = 65}
+                    let offsetXImage = (currentCharacterCode - 65) * 110;
+                    ctx.drawImage(imageQbertFont, offsetXImage, 0, letterOriginalHeight, letterOriginalHeight, currentPosX, y, fontHeight, fontHeight);
+                    currentPosX += fontHeight;
+                }
+                
+            }
+        }
+
+        function drawCredits() {
+            let fontHeightSpacing = 30;
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.green;
+            ctx.fillText(creditsString, canvas.width - ctx.measureText(creditsString).width - screenPaddingX, screenPaddingY);
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(creditsNumber, canvas.width - ctx.measureText(String(creditsNumber)).width - screenPaddingX, screenPaddingY + fontHeightSpacing);
+        }
+
+        function drawSwear(x, y, width, height) {
+            ctx.drawImage(imageSwear, x, y, width, height);
+        }
+
+        function drawQbertLogo(x, y, width, height) {
+            ctx.drawImage(imageQbertLogo, x, y, width, height);
+        }
+
+        function drawTitleCard() {
+            let startX = (canvas.width - 250) / 2;
+            let startY = screenPaddingY + 200;
+            
+            let imageWidth = 250;
+            let imageHeight = 80;
+            drawQbertLogo(startX, startY, imageWidth, imageHeight);
+            
+            ctx.font = fontsList.standard;
+            
+            startX = (canvas.width - ctx.measureText(copyrightLine1).width) / 2;
+            startY += imageHeight + fontHeightSpacing;
+            
+            let currentX = startX;
+            let stringToWrite = copyrightLine1.substring(0, 1);
+
+            ctx.fillStyle = fontsColors.pink;
+            ctx.fillText(stringToWrite, currentX, startY);
+            currentX += ctx.measureText(stringToWrite).width;
+
+            stringToWrite = copyrightLine1.substring(1, 5);
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(stringToWrite, currentX, startY);
+            currentX += ctx.measureText(stringToWrite).width;
+
+            stringToWrite = copyrightLine1.substring(5);
+            ctx.fillStyle = fontsColors.green;
+            ctx.fillText(stringToWrite, currentX, startY);
+
+            startX = (canvas.width - ctx.measureText(copyrightLine2).width) / 2;
+            startY += fontHeightSpacing;
+            ctx.fillText(copyrightLine2, startX, startY);
+
+            startX = (canvas.width - ctx.measureText(coinPlayString).width) / 2;
+            currentX = startX;
+            startY += 3 * fontHeightSpacing;
+
+            stringToWrite = coinPlayString.substring(0, 1);
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(stringToWrite, currentX, startY);
+            currentX += ctx.measureText(stringToWrite).width;
+
+            stringToWrite = coinPlayString.substring(1, 9);
+            ctx.fillStyle = fontsColors.green;
+            ctx.fillText(stringToWrite, currentX, startY);
+            currentX += ctx.measureText(stringToWrite).width;
+
+            stringToWrite = coinPlayString.substring(9, 10);
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(stringToWrite, currentX, startY);
+            currentX += ctx.measureText(stringToWrite).width;
+            
+            stringToWrite = coinPlayString.substring(10);
+            ctx.fillStyle = fontsColors.green;
+            ctx.fillText(stringToWrite, currentX, startY);
+            currentX += ctx.measureText(stringToWrite).width;
+        }
+
+        function drawGameOver() {
+            let paddingTop = 2;
+            let paddingRight = 5;
+            ctx.font = fontsList.bold;
+            let textWidth = ctx.measureText(gameOverString).width;
+            let posX = (canvas.width - (textWidth + 2 * paddingRight)) / 2;
+            let posY = (canvas.height - (fontHeightSpacing + 2 * paddingTop)) / 2;
+            ctx.fillStyle = backgroundMainColor;
+            ctx.fillRect(posX, posY, textWidth + 2 * paddingRight, fontHeightSpacing + 2 * paddingTop);
+            ctx.fillStyle = fontsColors.purple;
+            ctx.fillText(gameOverString, posX + paddingRight, posY + paddingTop + fontHeightSpacing - 5);
+        }
+
+        function drawPushStart() {
+            if (pushStart == true && blinkingOnState == true) {
+                let color;
+                switch (currentScene) {
+                    case 'title':
+                    case 'instructions':
+                        ctx.font = fontsList.standard;
+                        color = fontsColors.green;
+                        break;
+                    case 'demo':
+                        ctx.font = fontsList.bold;
+                        color = fontsColors.purple;
+                        break;
+                }
+                let stringToWrite = pushPlayerString[1];
+                if (creditsNumber < 2) {
+                    stringToWrite = pushPlayerString[0];
+                }
+                
+                ctx.fillStyle = color;
+                ctx.fillText(stringToWrite, (canvas.width - ctx.measureText(stringToWrite). width) / 2, canvas.height - screenPaddingY - 30);
+            }
+        }
+
+        function drawInstructions() {
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.green;
+            let posX = instructionsPosX;
+            let posY = instructionsPosY;
+            for (let i = 0; i < instructionsShow.length; i++) {
+                if (instructionsShow[i] == true) {
+                    let linesToWrite = instructionsLines[i];
+                    for (let n = 0; n < linesToWrite.length; n++) {
+                        ctx.fillText(linesToWrite[n], posX, posY);
+                        posY += fontHeightSpacing;
+                    }
+                    posX += qbertInstructionsOffsetX;
+                    posY += fontHeightSpacing;
+                }
+            }
+        }
+
+        function drawLives() {
+            let startX = screenPaddingX;
+            let startY = 250;
+            let imageHeight = 25;
+            let imageWidth = 19;
+            let imageMargin = 15;
+            let maxRows = 5;
+
+            for (let i = 0; i < livesPlayer[currentPlayer] - 1; i++) {
+                if (i % maxRows == 0) {
+                    if (i != 0) {
+                        startX += imageWidth + imageMargin;
+                    }
+                    startY = 250;
+                } else {
+                    startY += imageHeight + imageMargin;
+                }
+                ctx.drawImage(imageLife, startX, startY, imageWidth, imageHeight);
+            }
+        }
+
+        function drawQbert(direction, size, x, y, knelt = false) {
+            let offsetXImage = 0;
+            let qbertOriginalWidth = 100;
+            switch (direction) {
+                case 'right':
+                case 'faceright':
+                    break;
+                case 'down':
+                case 'faceleft':
+                    offsetXImage = 2 * qbertOriginalWidth;
+                    break;
+                case 'left':
+                case 'backleft':
+                    offsetXImage = 4 * qbertOriginalWidth;
+                    break;
+                case 'up':
+                case 'backright':
+                    offsetXImage = 6 * qbertOriginalWidth;
+                    break;
+            }
+            if (knelt == true) {
+                offsetXImage += qbertOriginalWidth;
+            }
+            ctx.drawImage(imageQbert, offsetXImage, 0, qbertOriginalWidth, qbertOriginalWidth, x, y, size, size);
+        }
+
+        function clearScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawChangeTo(x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.red;
+            ctx.fillText(changeToString, 0, 0);
+            
+            let stringLength = ctx.measureText(changeToString).width;
+            let cubeHeight = 15;
+            let cubeFactor = 0.5;
+            let cubeLength = 2 * cos30 * cubeFactor;
+            let cubePosX = (stringLength - cubeLength) / 2;
+            let cubeOffsetY = 20;
+            let arrowsPosY = cubeOffsetY + sin30 * cubeFactor / 2;
+            let arrowsWidth = 15;
+            let arrowsHeight = 22;
+            let arrowsWidthRatio = 1/2.2;
+            let arrowsHeightRatio = 1/3.5;
+            let arrowsSpace = 5;
+            let arrowsRightPosX = cubePosX + cubeLength + (cubePosX - (2 * arrowsWidth + arrowsSpace));
+
+            drawCube(cubePosX, cubeOffsetY, cubeHeight, leftColor, rightColor, topColorList[targetTopColorIndex()], cubeFactor);
+            if (arrowsShow[0] == true) {
+                drawArrow(0, arrowsPosY, arrowsWidth, arrowsHeight, arrowsWidthRatio, arrowsHeightRatio, 'right');
+                drawArrow(arrowsRightPosX + arrowsWidth + arrowsSpace, arrowsPosY, arrowsWidth, arrowsHeight, arrowsWidthRatio, arrowsHeightRatio, 'left');
+            }
+            if (arrowsShow[1] == true) {
+                drawArrow(arrowsWidth + arrowsSpace, arrowsPosY, arrowsWidth, arrowsHeight, arrowsWidthRatio, arrowsHeightRatio, 'right');
+                drawArrow(arrowsRightPosX, arrowsPosY, arrowsWidth, arrowsHeight, arrowsWidthRatio, arrowsHeightRatio, 'left');
+            }
+            
+            ctx.restore();
+            
+        }
+
+        function drawScore() {
+            ctx.font = fontsList.bold;
+            
+            let stringToWrite = playerString + ' ' + (currentPlayer + 1);
+            let stringPosX = screenPaddingX;
+            if (currentPlayer === 1) {
+                stringPosX = canvas.width - screenPaddingX - ctx.measureText(stringToWrite).width;
+            }
+            let gradientPlayerString = ctx.createLinearGradient(stringPosX, screenPaddingY, stringPosX, 25);
+            for (let i = 0; i < gradientStopPlayerString.length;i++) {
+                gradientPlayerString.addColorStop(gradientStopPlayerString[i].stop, gradientStopPlayerString[i].color);
+            }
+            ctx.fillStyle = gradientPlayerString;
+            ctx.fillText(stringToWrite, stringPosX, screenPaddingY);
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.orange;
+            stringToWrite = scorePlayer[currentPlayer];
+            stringPosX = screenPaddingX;
+            if (currentPlayer === 1) {
+                stringPosX = canvas.width - screenPaddingX - ctx.measureText(stringToWrite).width;
+            }
+            ctx.fillText(stringToWrite, stringPosX, screenPaddingY + fontHeightSpacing);
+        }
+
+        function drawLevelRound() {
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.green;
+            let stringToWrite = levelString + ' ' + (currentLevelPlayer[currentPlayer]  + 1);
+            let stringPosX = canvas.width - screenPaddingX - ctx.measureText(stringToWrite).width;
+            let stringPosY = pyramidPosY;
+            ctx.fillText(levelString + ' ', stringPosX, stringPosY);
+            stringPosX += ctx.measureText(levelString + ' ').width;
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(currentLevelPlayer[currentPlayer] + 1, stringPosX, stringPosY);
+
+            ctx.fillStyle = fontsColors.pink;
+            stringToWrite = roundString + ' ' + (currentRoundPlayer[currentPlayer] + 1);
+            stringPosX = canvas.width - screenPaddingX - ctx.measureText(stringToWrite).width;
+            stringPosY += fontHeightSpacing;
+            ctx.fillText(roundString + ' ', stringPosX, stringPosY);
+            stringPosX += ctx.measureText(roundString + ' ').width;
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(currentRoundPlayer[currentPlayer] + 1, stringPosX, stringPosY);
+        }
+
+        function drawBonus() {
+            let bonus = getBonus();
+            let stringToWrite = bonusString + ' ' + bonus;
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+            let stringPosX = (canvas.width - ctx.measureText(stringToWrite).width) / 2;
+            let stringPosY = canvas.height - screenPaddingY;
+            ctx.fillText(bonusString + ' ', stringPosX, stringPosY);
+            stringPosX += ctx.measureText(bonusString + ' ').width;
+            ctx.font = fontsList.standard;
+            ctx.fillStyle = fontsColors.orange;
+            ctx.fillText(bonus, stringPosX, stringPosY);
+        }
+
+        function drawBackground(backgroundColor, strokeColor) {
+            ctx.beginPath();
+            ctx.fillStyle = backgroundColor;
+            ctx.strokeStyle = strokeColor;
+            ctx.rect(0, 0, canvas.width, canvas.height);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawPlayground(x, y, nbCubesWidth, nbLevels, visibleCubesList, topColorCubesList) {
+            if (nbLevels <= 0 || nbCubesWidth <= 0) { return; }
+            let nbTotalCubes = getTotalCubesNumber(nbCubesWidth, nbLevels);
+            if (visibleCubesList.length < nbTotalCubes) { return; }
+            if (topColorCubesList.length < nbTotalCubes) { return; }
+
+            let startX;
+            let startY;
+            let currentCubeIndex = -1;
+
+            for (i = 0; i < nbLevels; i++) {
+                startX = x;
+                if (i % 2 != 0) {
+                    startX = x + cos30;
+                }
+                startY = y + i * (sin30 + cubeHeight);
+                let limitCubesRow = nbCubesWidth;
+                if (i % 2 != 0) {
+                    limitCubesRow = nbCubesWidth - 1;
+                }
+                for (j = 0; j < limitCubesRow; j++) {
+                    currentCubeIndex++;
+                    let currentCubeTopColorIndex = topColorCubesList[currentCubeIndex];
+                    if (visibleCubesList[currentCubeIndex] == true) {
+                        drawCube(startX, startY, cubeHeight, leftColor, rightColor, topColorList[currentCubeTopColorIndex]);
+                    }
+                    startX += 2 * cos30;
+                }
+            }
+        }
+
+        function drawPyramid(x, y, nbLevels) {
+            let startX;
+            let startY;
+            
+            for (i = 0; i < nbLevels; i++) {
+                startX = x + (nbLevels - 1) * cos30 - i * cos30;
+                startY = y + i * (sin30 + cubeHeight);
+                for (j = 0; j < i+1; j++) {
+                    let currentCubeIndex = (i + 1) * i / 2 + j;
+                    let currentCubeTopColorIndex = currentTopColorIndex[currentPlayer];
+                    if (currentCubeIndex <= topColorIndexArray[currentPlayer].length - 1 && currentCubeIndex >= 0) {
+                        currentCubeTopColorIndex = topColorIndexArray[currentPlayer][currentCubeIndex];
+                    }
+                    drawCube(startX, startY, cubeHeight, leftColor, rightColor, topColorList[currentCubeTopColorIndex]); // #777, #222, #333
+                    startX += 2 * cos30;
+                }
+            }
+        }
+        
+        function drawCube(x, y, cubeHeight, colorLeft, colorRight, colorTop, scale = 1) {
+            let targetX;
+            let targetY;
+            ctx.beginPath();
+            ctx.fillStyle = colorLeft;
+            targetX = x;
+            targetY = y + sin30 * scale;
+            ctx.moveTo(targetX, targetY);
+            targetX += cos30 * scale;
+            targetY += sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            targetY += cubeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX = x;
+            targetY -= sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            targetY = y;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x;
+            targetY = y + sin30 * scale;
+            ctx.moveTo(targetX, targetY);
+            targetX += cos30 * scale;
+            targetY = y;
+            ctx.lineTo(targetX, targetY);
+            targetX += cos30 * scale;
+            targetY += sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            targetX -= cos30 * scale;
+            targetY += sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            targetX = x;
+            targetY -= sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = colorRight;
+            targetX = x + cos30 * scale;
+            targetY = y + 2 * sin30 * scale;
+            ctx.moveTo(targetX, targetY);
+            targetX += cos30 * scale;
+            targetY -= sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            targetY += cubeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= cos30 * scale;
+            targetY += sin30 * scale;
+            ctx.lineTo(targetX, targetY);
+            targetY -= cubeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+        }
+
+        function drawLevelNumber(x, y) {
+            let offsetNumber = currentLevelPlayer[currentPlayer] * levelNumberLargeWidth;
+            ctx.drawImage(imageLevelNumbers, offsetNumber, 0, levelNumberLargeWidth, levelNumberLargeWidth, x, y, levelNumberTargetWidth, levelNumberTargetWidth);
+        }
+
+        function drawLevelLogo(x, y, colorLeft, colorRight, colorTop) {
+
+            let targetX;
+            let targetY;
+            let letterHeight = 5 * letterLevelStrokeHeight;
+            let letterLWidth = 3 * letterLevelStrokeWidth;
+            let letterEWidth = 4 * letterLevelStrokeWidth;
+            
+            // Shadow first L
+
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLWidth;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterHeight - letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Shadow first E
+
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x + letterLWidth + letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterEWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Shadow first part V
+
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x + letterLWidth + letterEWidth + 2 * letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += 3.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += 2 * letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= 4.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Shadow second part V
+
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x + letterLWidth + letterEWidth + 8 * letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += 3.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= 4.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Shadow second E
+
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x + letterLWidth + letterEWidth + 8 * letterLevelStrokeWidth;
+            targetY = y;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLevelStrokeWidth;
+            targetY += letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += 3 * letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Shadow second L
+
+            ctx.beginPath();
+            ctx.fillStyle = colorTop;
+            targetX = x + letterLWidth + 2 * letterEWidth + 9 * letterLevelStrokeWidth;
+            targetY = y;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLevelStrokeWidth;
+            targetY += letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY -= 3 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Letter L
+
+            ctx.beginPath();
+            ctx.fillStyle = colorLeft;
+            targetX = x;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterLWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterHeight - letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Letter E
+
+            ctx.beginPath();
+            ctx.fillStyle = colorLeft;
+            targetX = x + letterLWidth + letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterEWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth - 2 * letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterEWidth - 2 * letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Letter V - first part
+
+            ctx.beginPath();
+            ctx.fillStyle = colorLeft;
+            targetX = x + letterLWidth + letterEWidth + 2 * letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += 3.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += 3 * letterLevelStrokeWidth;
+            targetY += 1.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY -= 3 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Letter V - second part
+
+            ctx.beginPath();
+            ctx.fillStyle = colorRight;
+            targetX = x + letterLWidth + letterEWidth + 7 * letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += 3 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= 2 * letterLevelStrokeWidth;
+            targetY += letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY += letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += 3 * letterLevelStrokeWidth;
+            targetY -= 1.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetY -= 3.5 * letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Letter E
+
+            ctx.beginPath();
+            ctx.fillStyle = colorRight;
+            targetX = x + letterLWidth + letterEWidth + 9 * letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterEWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth - 2 * letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterEWidth - 2 * letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterEWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Letter L
+
+            ctx.beginPath();
+            ctx.fillStyle = colorRight;
+            targetX = x + letterLWidth + 2 * letterEWidth + 10 * letterLevelStrokeWidth;
+            targetY = y + letterLevelStrokeHeight;
+            ctx.moveTo(targetX, targetY);
+            targetY += letterHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX += letterLWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterLWidth - letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            targetY -= letterHeight - letterLevelStrokeHeight;
+            ctx.lineTo(targetX, targetY);
+            targetX -= letterLevelStrokeWidth;
+            ctx.lineTo(targetX, targetY);
+            ctx.fill();
+
+            // Circle with level number
+
+            ctx.beginPath();
+            ctx.fillStyle = fontsColors.green;
+            ctx.arc(12 * letterLevelStrokeWidth + x, 9 * letterLevelStrokeHeight + y, 2 * letterLevelStrokeWidth, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = backgroundMainColor;
+            ctx.arc(12 * letterLevelStrokeWidth + x, 9 * letterLevelStrokeHeight + y, 1.8 * letterLevelStrokeWidth, 0, 2 * Math.PI);
+            ctx.fill();
+
+        }
+
+        function drawDisks() {
+            for (let i = 0; i < disksPresenceList.length; i++) {      
+                if (disksPresenceList[i] == true) {
+                    let offsetY = diskOffsetY;
+                    let offsetX = 0;
+                    position = disksPositionList[i].substring(0, 1);
+                    row = parseInt(disksPositionList[i].substring(1));
+                    if (position == 'r') {
+                        offsetX = (row * 2 + 1) * cos30 - diskOffsetX;
+                    }
+                    diskPosY = pyramidPosY + (row - 1) * (sin30 + cubeHeight) - sin30 - offsetY ;
+                    diskPosX = pyramidPosX + (pyramidLevels - 1 - row) * cos30 + offsetX;
+                    drawDisk(diskPosX, diskPosY, diskDiameter);
+                }
+            }
+        }
+
+        function drawDisk(x, y, diskSize) {
+            let radius = diskSize / 2;
+            let startAngle = 0;
+            let endAngle = Math.PI / 2;
+            let centerPointX = x + radius;
+            let centerPointY = y + radius;
+            
+            ctx.save();
+            ctx.translate(centerPointX, centerPointY);
+            ctx.scale(1, 0.5);
+
+            let gradient = ctx.createLinearGradient(-radius, 0, diskSize, radius);
+            gradient.addColorStop(0, diskBottomColor);
+            gradient.addColorStop(0.2, diskBottomColor);
+            gradient.addColorStop(1, '#000000');
+
+            ctx.beginPath();
+            ctx.fillStyle = gradient;
+            ctx.lineTo(radius, 0);
+            ctx.arc(0, radius / 1.5, radius, 0, Math.PI);
+            ctx.lineTo(-radius, 0);
+            ctx.fill();
+
+            for (let i = 0; i < diskTopColorList.length; i++) {
+                startAngle += Math.PI / 2;
+                endAngle += Math.PI / 2;
+                ctx.beginPath();
+                ctx.fillStyle = diskTopColorList[i];
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.lineTo(0, 0);
+                ctx.fill();
+            }
+
+            for (let i = 0; i < diskTopColorList.length; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.fillStyle = diskTopColorList[i];
+                ctx.moveTo(1, 0);
+                ctx.lineTo(0, 0);
+                ctx.lineTo(- radius / 2 + 4, radius / 2);
+                ctx.lineTo(0, radius);
+                ctx.lineTo(1, radius);
+                ctx.fill();
+            }
+            ctx.restore();
+          
+        }
+
+        function drawArrow(x, y, width, height, widthRatio, heightRatio, direction) {
+            ctx.save();
+            ctx.translate(x + width / 2, y + height / 2);
+            switch (direction) {
+                case 'left':
+                    ctx.rotate(Math.PI);
+                    break;
+                case 'up':
+                    ctx.rotate(3 * Math.PI / 2);
+                    break;
+                case 'down':
+                    ctx.rotate(Math.PI / 2);
+                    break;
+                default:
+                    break;
+            }
+            ctx.translate(- width / 2, - height / 2);
+            ctx.fillStyle = fontsColors.pink;
+            ctx.beginPath();
+            ctx.moveTo(0, height * heightRatio);
+            ctx.lineTo(width * widthRatio, height * heightRatio);
+            ctx.lineTo(width * widthRatio, 0);
+            ctx.lineTo(width, height / 2);
+            ctx.lineTo(width * widthRatio, height);
+            ctx.lineTo(width * widthRatio, height * (1 - heightRatio));
+            ctx.lineTo(0, height * (1 - heightRatio));
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawObjects() {
+            for (let i = 0; i < objectsList.length; i++) {
+                let object = objectsList[i];
+                if (object.show == true) {
+                    switch (object.type) {
+                        case 'greenball':
+                        case 'purpleball':
+                        case 'redball':
+                            let ballColor = object.type.slice(0, object.type.indexOf('ball'));
+                            drawBall(object.x, object.y, object.width, object.height, ballColor);
+                            break;
+                        case 'qbert':
+                            drawQbert(object.currentDirection, object.width, object.x, object.y, object.knelt);
+                            break;
+                    }
+                }
+            }
+        }
+
+        function drawBall(posX, posY, width, height, color, pushed = false) {
+            let offsetImageX = 0;
+            let originalImageWidth = 100;
+            switch (color) {
+                case 'red':
+                    break;
+                case 'green':
+                    offsetImageX += 2 * originalImageWidth;
+                    break;
+                case 'purple':
+                    offsetImageX += 4 * originalImageWidth;
+                    break;
+            }
+            if (pushed == true) {
+                offsetImageX += originalImageWidth;
+            }
+            ctx.drawImage(imageBalls, offsetImageX, 0, originalImageWidth, originalImageWidth, posX, posY, width, height);
+        }
+
+        function colorInterpolation(colorFrom, colorTo, percent) {
+            let currentRedValue = Math.abs(parseInt(colorTo.substr(1, 2),16) - parseInt(colorFrom.substr(1, 2), 16)) * percent;
+            let currentGreenValue = Math.abs(parseInt(colorTo.substr(3, 2),16) - parseInt(colorFrom.substr(3, 2), 16)) * percent;
+            let currentBlueValue = Math.abs(parseInt(colorTo.substr(5, 2),16) - parseInt(colorFrom.substr(5, 2), 16)) * percent;
+            currentRedValue = Math.min(255, Math.max(0, currentRedValue));
+            currentGreenValue = Math.min(255, Math.max(0, currentGreenValue));
+            currentBlueValue = Math.min(255, Math.max(0, currentBlueValue));
+            return 'rgb(' + currentRedValue + ',' + currentGreenValue + ',' + currentBlueValue + ')';
+        }
+
+    </script>
+</body>
+</html>
