@@ -152,13 +152,18 @@
                 this.currentDirection = '';
                 this.x = 0;
                 this.y = 0;
+                this.setTarget = 'off';
+                this.targetX = 0;
+                this.targetY = 0;
                 this.vx = 0;
                 this.vy = 0;
                 this.width = 0;
                 this.height = 0;
+                this.pauseTimer = 0;
+                this.gravityFactor = 1;
+                this.jumpSound = '';
             }
         }
-
 
 // ======== Region : variables initialisation ========
 
@@ -176,8 +181,9 @@
         let secondsPassed = 0;
         let oldTimeStamp = 0;
 
-        let gravityFactor = 200;
-        let gravity = 9.81 * gravityFactor;
+        let globalGravityFactor = 200;
+        let gravity = 9.81 * globalGravityFactor;
+        let minCharacterGravityFactor = 0.5;
 
         let objectsList = [];
 
@@ -524,6 +530,11 @@
         let arrowsTimer = arrowsTime;
         let arrowsShow = [false, false];
         
+        // Characters variables
+
+        let redBallDropTime = 3;
+        let redBallDropTimer = redBallDropTime;
+
         // Main scene variables
 
         let endLevelTime = 2.7;
@@ -536,6 +547,7 @@
         let flyingDiskTime = 3;
         let flyingDiskFallTime = 1;
         let backgroundFlashingTime = 0.3;
+        let characterPauseTime = 0.3;
         let endLevelTimer = endLevelTime;
         let flashColorTimer = flashColorTime;
         let nextRoundTimer = nextRoundTime;
@@ -965,6 +977,7 @@
                     fallTimer = fallTime;
                     backgroundFlashingTimer = backgroundFlashingTime;
                     currentMainSceneBackgroundColor = backgroundMainColor;
+                    objectsList = [];
                     break;
                 case 'title':
                     setDiskColorList(0);
@@ -1003,14 +1016,15 @@
                     levelSwitchMainTimer = levelSwitchMainTime;
                     levelNumberFlashCounter = 0;
                     levelQbertMovesIterator = yieldIntroQbertMoves(currentLevelPlayer[currentPlayer]);
-                    objectsList = [new Character('qbert')];
-                    objectsList[0].x = (canvas.width - qbertSize) / 2;
-                    objectsList[0].y = screenPaddingY + levelSceneTopPadding + sin30;
-                    objectsList[0].currentDirection = 'down';
-                    objectsList[0].width = qbertSize;
-                    objectsList[0].height = qbertSize;
-                    objectsList[0].currentRow = 1;
-                    objectsList[0].currentCube = 2;
+                    let qbertCharacter = new Character('qbert');
+                    qbertCharacter.x = (canvas.width - qbertSize) / 2;
+                    qbertCharacter.y = screenPaddingY + levelSceneTopPadding + sin30;
+                    qbertCharacter.currentDirection = 'down';
+                    qbertCharacter.width = qbertSize;
+                    qbertCharacter.height = qbertSize;
+                    qbertCharacter.currentRow = 1;
+                    qbertCharacter.currentCube = 2;
+                    objectsList = [qbertCharacter];
                     levelPlaygroundCubesColors = [0, 0, 0, 0, 0, 0, 0, 0];
                     break;
                 case 'highscores':
@@ -1097,7 +1111,13 @@
             flashingArrows(secondsPassed);
             animateGradient(secondsPassed);
             computeExtraLife();
-            if (qbert[currentPlayer].moving == true && (outOfBounds() == false || isQbertOnDisk() == true)) {
+            if (checkRoundCompletion() == false) {
+                charactersGenerator(secondsPassed);
+                updateObjects(secondsPassed);
+                cleanUpCharacters();
+                computeCharactersNextMove();
+            }
+            if (qbert[currentPlayer].moving == true && (outOfBounds(qbert[currentPlayer]) == false || isQbertOnDisk() == true)) {
                 allowMovement = false;
                 if (computeObjectPosition(qbert[currentPlayer], secondsPassed, qbertSize, 'xy', qbert[currentPlayer].targetX, qbert[currentPlayer].targetY)) {
                     qbert[currentPlayer].moving = false;
@@ -1106,7 +1126,7 @@
                     updateCubeTopColor();
                 }
             }
-            if (outOfBounds() == true && isQbertOnDisk() == false && flyingDiskSequence == false) {
+            if (outOfBounds(qbert[currentPlayer]) == true && isQbertOnDisk() == false && flyingDiskSequence == false) {
                 allowMovement = false;
                 qbert[currentPlayer].knelt = false;
                 fallSequence(secondsPassed);
@@ -1281,6 +1301,7 @@
                 if (showBonus == false) {
                     updateScore(getBonus());
                 }
+                objectsList = [];
                 showBonus = true;
                 countDiskBonus = hasRemainingDisks();
                 nextRoundTimer = nextRoundTime;
@@ -1530,10 +1551,11 @@
         }
 
         function computeCharacterSpeeds(character, jumpHeight) {
-            character.vy = - Math.sqrt(2 * gravity * jumpHeight);
+            let adaptedGravity = gravity * character.gravityFactor;
+            character.vy = - Math.sqrt(2 * adaptedGravity * jumpHeight);
             let highPointY = character.y - jumpHeight;
-            let timeRising = Math.abs(character.vy / gravity);
-            let timeFalling = Math.sqrt(Math.abs(highPointY - character.targetY) / gravity);
+            let timeRising = Math.abs(character.vy / adaptedGravity);
+            let timeFalling = Math.sqrt(Math.abs(highPointY - character.targetY) / adaptedGravity);
             let jumpTime = timeRising + timeFalling;
             character.vx = (character.targetX - character.x) / jumpTime;
         }
@@ -1553,7 +1575,7 @@
                     if (isQbertOnDisk() == true) {
                         character.targetX = character.x - (2 * cos30 - diskDiameter / 2 + diskOffsetX);
                         character.targetY = character.y - (sin30 + diskOffsetY);
-                    } else if (outOfBounds() == false) {
+                    } else if (outOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x - cos30;
                         character.targetY = character.y - (sin30 + cubeHeight);
                     } else {
@@ -1568,7 +1590,7 @@
                     if (pyramidScene == true || character.currentRow % 2 != 0) {
                         character.currentCube += 1;
                     }
-                    if (outOfBounds() == false) {
+                    if (outOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x + cos30;
                         character.targetY = character.y + sin30 + cubeHeight;
                     } else {
@@ -1586,7 +1608,7 @@
                     if (isQbertOnDisk() == true) {
                         character.targetX = character.x + 2 * cos30 - diskDiameter / 2 + diskOffsetX;
                         character.targetY = character.y - (sin30 + diskOffsetY);
-                    } else if (outOfBounds() == false) {
+                    } else if (outOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x + cos30;
                         character.targetY = character.y - (sin30 + cubeHeight);
                     } else {
@@ -1601,7 +1623,7 @@
                     if (pyramidScene == false && character.currentRow % 2 == 0) {
                         character.currentCube -= 1;
                     }
-                    if (outOfBounds() == false) {
+                    if (outOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x - cos30;
                         character.targetY = character.y + sin30 + cubeHeight;
                     } else {
@@ -1613,7 +1635,7 @@
                     break;
             }
             
-            console.log(direction, character.currentRow, character.currentCube);
+            //console.log(direction, character.currentRow, character.currentCube);
         }
 
         function removeCurrentDisk() {
@@ -1676,6 +1698,9 @@
                     break;
                 case 'titleSwear':
                     audioFile = soundsFolder + 'fx_18c.mp3';
+                    break;
+                case 'ball':
+                    audioFile = soundsFolder + 'ball-jump.mp3';
                     break;
             }
             if (audioFile !== '') {
@@ -1805,11 +1830,6 @@
         }
 
         function getCurrentCubeIndex(character, nbCubesWidth) {
-            // let currentCharacterCube = character.currentCube;
-            // if (character.currentRow % 2 == 0) {
-            //     currentCharacterCube -= 1;
-            // }
-            console.log(getTotalCubesNumber(nbCubesWidth, character.currentRow - 1), character.currentCube, getTotalCubesNumber(nbCubesWidth, character.currentRow - 1) + character.currentCube - 1);
             return getTotalCubesNumber(nbCubesWidth, character.currentRow - 1) + character.currentCube - 1;
         }
 
@@ -1818,11 +1838,73 @@
             cos30 = cubeSize * Math.cos(30 * Math.PI / 180);
         }
 
+        function charactersGenerator(secondsPassed) {
+            let currentLevel = currentLevelPlayer[currentPlayer];
+            let currentRound = currentRoundPlayer[currentPlayer];
+            let charactersList = levels[currentLevel].rounds[currentRound].characters;
+            if (charactersList.indexOf('redball') != -1) {
+                redBallDropTimer -= secondsPassed;
+                if (redBallDropTimer <= 0) {
+                    let newRedBall = new Character('redball');
+                    newRedBall.width = qbertSize;
+                    newRedBall.height = qbertSize;
+                    let randomPosition = Math.floor(Math.random() * 2);
+                    let randomGravityFactor = minCharacterGravityFactor * Math.max(1, Math.floor(Math.random() * 5));
+                    newRedBall.x = pyramidPosX + 6 * cos30 + 2 * cos30 * randomPosition - newRedBall.width / 2;
+                    newRedBall.y = screenPaddingY;
+                    newRedBall.currentRow = 2;
+                    newRedBall.currentCube = randomPosition + 1;
+                    newRedBall.show = true;
+                    newRedBall.knelt = true;
+                    newRedBall.moving = true;
+                    newRedBall.setTarget = 'y';
+                    newRedBall.targetY = pyramidPosY + 2 * sin30 + cubeHeight - newRedBall.height;
+                    newRedBall.gravityFactor = randomGravityFactor;
+                    newRedBall.pauseTimer = characterPauseTime;
+                    newRedBall.jumpSound = 'ball';
+                    objectsList.push(newRedBall);
+                    console.log(objectsList);
+                    redBallDropTimer = redBallDropTime;
+                }
+            }
+        }
+
+        function cleanUpCharacters() {
+            for (let i = objectsList.length - 1; i >= 0; i--) {
+                if (outOfBounds(objectsList[i]) && objectsList[i].moving == false) {
+                    objectsList.splice(i, 1);
+                }
+            }
+        }
+
+        function computeCharactersNextMove() {
+            for (let i = 0; i < objectsList.length; i++) {
+                let object = objectsList[i];
+                if (object.moving == true) { continue; }
+                if (object.pauseTimer > 0) { continue; }
+                switch (object.type) {
+                    case 'redball':
+                        let randomDirection = Math.floor(Math.random() * 2);
+                        object.currentDirection = 'down';
+                        if (randomDirection == 1) { object.currentDirection = 'right'; }
+                        moveCharacter(object, object.currentDirection);
+                        object.setTarget = 'xy';
+                        object.pauseTimer = characterPauseTime;
+                        playSound(object.jumpSound);
+                        break;
+                }
+            }
+        }
+
         function updateObjects(secondsPassed) {
             for (let i = 0; i < objectsList.length; i++) {
                 let object = objectsList[i];
                 if (object.show == true) {
-                    computeObjectPosition(object, secondsPassed, object.height);
+                    object.moving = !computeObjectPosition(object, secondsPassed, object.height, object.setTarget, object.targetX, object.targetY);
+                    object.knelt = !object.moving;
+                    if (object.moving == false) {
+                        object.pauseTimer -= secondsPassed;
+                    }
                 }
             }
         }
@@ -1898,8 +1980,8 @@
                     break;
             }
             object.x += object.vx * secondsPassed;
-            object.y += gravity * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
-            object.vy += gravity * secondsPassed;
+            object.y += gravity * object.gravityFactor * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
+            object.vy += gravity * object.gravityFactor * secondsPassed;
             return false;
         }
 
@@ -2150,11 +2232,12 @@
             diskTopColorList.unshift(lastColor);
         }
 
-        function outOfBounds() {
-            if (qbert[currentPlayer].currentRow < 1) { return true }
-            if (qbert[currentPlayer].currentRow > pyramidLevels) { return true }
-            if (qbert[currentPlayer].currentCube < 1) { return true }
-            if (qbert[currentPlayer].currentCube > qbert[currentPlayer].currentRow) { return true }
+        function outOfBounds(character, pyramidScene = true) {
+            if (pyramidScene == false) { return false; }
+            if (character.currentRow < 1) { return true; }
+            if (character.currentRow > pyramidLevels) { return true; }
+            if (character.currentCube < 1) { return true; }
+            if (character.currentCube > character.currentRow) { return true; }
             return false;
         }
 
@@ -2182,7 +2265,7 @@
         }
 
         function updateCubeTopColor() {
-            if (outOfBounds() == true) { return; }
+            if (outOfBounds(qbert[currentPlayer]) == true) { return; }
             if (isQbertOnDisk() == true) { return; }
 
             let cubeNumber = getPyramidCurrentCubeIndex(qbert[currentPlayer]);
@@ -2301,6 +2384,7 @@
             if (gameOverPlayer[currentPlayer] == true) {
                 drawGameOver();
             }
+            drawObjects();
         }
 
         function drawTitleScene() {
@@ -3455,7 +3539,7 @@
                         case 'purpleball':
                         case 'redball':
                             let ballColor = object.type.slice(0, object.type.indexOf('ball'));
-                            drawBall(object.x, object.y, object.width, object.height, ballColor);
+                            drawBall(object.x, object.y, object.width, object.height, ballColor, object.knelt);
                             break;
                         case 'qbert':
                             drawQbert(object.currentDirection, object.width, object.x, object.y, object.knelt);
