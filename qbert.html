@@ -499,6 +499,7 @@
         let imageQbert = document.getElementById('qbertSprite');
         let imageSwear = document.getElementById('swear');
         let imageBalls = document.getElementById('ballsSprite');
+        let imageCoily = document.getElementById('coilySprite');
         let imageLife = document.getElementById('life');
 
         let powerUpWaitTime = 1;
@@ -532,8 +533,8 @@
         
         // Characters variables
 
-        let redBallDropTime = 3;
-        let redBallDropTimer = redBallDropTime;
+        let characterDropTime = 3;
+        let characterDropTimer = characterDropTime;
 
         // Main scene variables
 
@@ -562,6 +563,7 @@
         let flyingDiskSequence = false;
         let showFlyingDisk = false;
         let remainingFlyingDisksCounter = 0;
+        let currentCharacterIndex = 0;
         
         // Level scene variables
 
@@ -977,6 +979,7 @@
                     fallTimer = fallTime;
                     backgroundFlashingTimer = backgroundFlashingTime;
                     currentMainSceneBackgroundColor = backgroundMainColor;
+                    currentCharacterIndex = 0;
                     objectsList = [];
                     break;
                 case 'title':
@@ -994,9 +997,13 @@
                     instructionsBallHit = false;
                     allowMovement = false;
                     showSwear = false;
-                    objectsList = [
-                        { type: 'redball', show: false, x: 200, y: 100, vx: 0, vy: 0, width: 50, height: 50 },
-                    ];
+                    let newRedBall = new Character('redball');
+                    newRedBall.show = false;
+                    newRedBall.x = 200;
+                    newRedBall.y = 100;
+                    newRedBall.width = 50;
+                    newRedBall.height = 50;
+                    objectsList = [newRedBall];
                     qbertTitlePosX = screenPaddingX;
                     qbertTitlePosY = screenPaddingY + 100;
                     instructionsPosX = qbertTitlePosX + qbertSize + 80;
@@ -1842,31 +1849,56 @@
             let currentLevel = currentLevelPlayer[currentPlayer];
             let currentRound = currentRoundPlayer[currentPlayer];
             let charactersList = levels[currentLevel].rounds[currentRound].characters;
-            if (charactersList.indexOf('redball') != -1) {
-                redBallDropTimer -= secondsPassed;
-                if (redBallDropTimer <= 0) {
-                    let newRedBall = new Character('redball');
-                    newRedBall.width = qbertSize;
-                    newRedBall.height = qbertSize;
+            if (charactersList.length > 0) {
+                characterDropTimer -= secondsPassed;
+                if (characterDropTimer <= 0) {
+
+                    let newCharacter = new Character('');
                     let randomPosition = Math.floor(Math.random() * 2);
                     let randomGravityFactor = minCharacterGravityFactor * Math.max(1, Math.floor(Math.random() * 5));
-                    newRedBall.x = pyramidPosX + 6 * cos30 + 2 * cos30 * randomPosition - newRedBall.width / 2;
-                    newRedBall.y = screenPaddingY;
-                    newRedBall.currentRow = 2;
-                    newRedBall.currentCube = randomPosition + 1;
-                    newRedBall.show = true;
-                    newRedBall.knelt = true;
-                    newRedBall.moving = true;
-                    newRedBall.setTarget = 'y';
-                    newRedBall.targetY = pyramidPosY + 2 * sin30 + cubeHeight - newRedBall.height;
-                    newRedBall.gravityFactor = randomGravityFactor;
-                    newRedBall.pauseTimer = characterPauseTime;
-                    newRedBall.jumpSound = 'ball';
-                    objectsList.push(newRedBall);
-                    console.log(objectsList);
-                    redBallDropTimer = redBallDropTime;
+                    newCharacter.width = qbertSize;
+                    newCharacter.height = qbertSize;
+                    newCharacter.x = pyramidPosX + 6 * cos30 + 2 * cos30 * randomPosition - newCharacter.width / 2;
+                    newCharacter.y = screenPaddingY;
+                    newCharacter.currentRow = 2;
+                    newCharacter.currentCube = randomPosition + 1;
+                    newCharacter.show = true;
+                    newCharacter.knelt = true;
+                    newCharacter.moving = true;
+                    newCharacter.setTarget = 'y';
+                    newCharacter.targetY = pyramidPosY + 2 * sin30 + cubeHeight - newCharacter.height;
+                    newCharacter.gravityFactor = randomGravityFactor;
+                    newCharacter.pauseTimer = characterPauseTime;
+
+                    let characterName = charactersList[currentCharacterIndex];
+                    if (characterName == 'coily' && isCoilyPresent() == false) {
+                        newCharacter.type = 'purpleball';
+                    } else if (characterName == 'coily' && isCoilyPresent() == true) {
+                        currentCharacterIndex = (currentCharacterIndex + 1) % charactersList.length;
+                        characterName = charactersList[currentCharacterIndex];
+                    }
+                    if (characterName != 'coily') {
+                        newCharacter.type = characterName;
+                        switch(characterName) {
+                            case 'redball':
+                                newCharacter.jumpSound = 'ball';
+                                break;
+                        }
+                    }
+                    objectsList.push(newCharacter);
+                    currentCharacterIndex = (currentCharacterIndex + 1) % charactersList.length;
+                    characterDropTimer = characterDropTime;
                 }
             }
+        }
+
+        function isCoilyPresent() {
+            for (let i = 0; i < objectsList.length; i++) {
+                if (objectsList[i].type == 'purpleball' || objectsList[i].type == 'coily') {
+                    return true;
+                }
+            }
+            return false;
         }
 
         function cleanUpCharacters() {
@@ -1882,15 +1914,30 @@
                 let object = objectsList[i];
                 if (object.moving == true) { continue; }
                 if (object.pauseTimer > 0) { continue; }
+                let randomDirection = Math.floor(Math.random() * 2);
                 switch (object.type) {
+                    case 'greenball':
                     case 'redball':
-                        let randomDirection = Math.floor(Math.random() * 2);
                         object.currentDirection = 'down';
                         if (randomDirection == 1) { object.currentDirection = 'right'; }
                         moveCharacter(object, object.currentDirection);
                         object.setTarget = 'xy';
                         object.pauseTimer = characterPauseTime;
                         playSound(object.jumpSound);
+                        break;
+                    case 'purpleball':
+                        if (object.currentRow != pyramidLevels) {
+                            object.currentDirection = 'down';
+                            if (randomDirection == 1) { object.currentDirection = 'right'; }
+                            moveCharacter(object, object.currentDirection);
+                            object.setTarget = 'xy';
+                            object.pauseTimer = characterPauseTime;
+                        } else {
+                            object.type = 'coily';
+                            object.height = object.height * 2;
+                            object.targetY -= object.height / 2;
+                            object.y -= object.height / 2;
+                        }
                         break;
                 }
             }
@@ -2919,6 +2966,34 @@
             ctx.drawImage(imageQbert, offsetXImage, 0, qbertOriginalWidth, qbertOriginalWidth, x, y, size, size);
         }
 
+        function drawCoily(direction, size, x, y, knelt = false) {
+            let offsetXImage = 0;
+            let coilyOriginalWidth = 100;
+            let coilyOriginalHeight = 200;
+            let coilyImageRatio = coilyOriginalHeight / coilyOriginalWidth;
+            switch (direction) {
+                case 'right':
+                case 'faceright':
+                    break;
+                case 'down':
+                case 'faceleft':
+                    offsetXImage = 2 * coilyOriginalWidth;
+                    break;
+                case 'left':
+                case 'backleft':
+                    offsetXImage = 4 * coilyOriginalWidth;
+                    break;
+                case 'up':
+                case 'backright':
+                    offsetXImage = 6 * coilyOriginalWidth;
+                    break;
+            }
+            if (knelt == true) {
+                offsetXImage += coilyOriginalWidth;
+            }
+            ctx.drawImage(imageCoily, offsetXImage, 0, coilyOriginalWidth, coilyOriginalHeight, x, y, size, size * coilyImageRatio);
+        }
+
         function clearScreen() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -3543,6 +3618,9 @@
                             break;
                         case 'qbert':
                             drawQbert(object.currentDirection, object.width, object.x, object.y, object.knelt);
+                            break;
+                        case 'coily':
+                            drawCoily(object.currentDirection, object.width, object.x, object.y, object.knelt);
                             break;
                     }
                 }
