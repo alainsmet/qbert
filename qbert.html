@@ -147,6 +147,8 @@
                 this.showOnTop = true;
                 this.currentRow = 1;
                 this.currentCube = 1;
+                this.targetRow = 1;
+                this.targetCube = 1;
                 this.moving = false;
                 this.knelt = false;
                 this.currentDirection = '';
@@ -160,8 +162,12 @@
                 this.width = 0;
                 this.height = 0;
                 this.pauseTimer = 0;
+                this.jumpFrameTime = 0.3;
+                this.jumpFrameTimer = this.jumpFrameTime;
+                this.jumpCurrentFrame = 0;
                 this.gravityFactor = 1;
                 this.jumpSound = '';
+                this.playSound = true;
             }
         }
 
@@ -493,6 +499,8 @@
         ];
         let gradientPlayerStringSpeed = 0.015;
         
+        // Pictures and sprites
+
         let imageQbertLogo = document.getElementById('qbertLogo');
         let imageLevelNumbers = document.getElementById('levelNumbers');
         let imageQbertFont = document.getElementById('qbertFont');
@@ -500,6 +508,10 @@
         let imageSwear = document.getElementById('swear');
         let imageBalls = document.getElementById('ballsSprite');
         let imageCoily = document.getElementById('coilySprite');
+        let imageSlick = document.getElementById('slickSprite');
+        let imageSam = document.getElementById('samSprite');
+        let imageWrongWay = document.getElementById('wronwaySprite');
+        let imageUgg = document.getElementById('uggSprite');
         let imageLife = document.getElementById('life');
 
         let powerUpWaitTime = 1;
@@ -555,6 +567,7 @@
         let gameOverTimer = gameOverTime;
         let fallTimer = fallTime;
         let backgroundFlashingTimer = backgroundFlashingTime;
+        let coilyHatchTimer = characterDropTime;
         let endLevel = false;
         let showBonus = false;
         let countDiskBonus = false;
@@ -564,6 +577,9 @@
         let showFlyingDisk = false;
         let remainingFlyingDisksCounter = 0;
         let currentCharacterIndex = 0;
+        let coilyJumpSoundCounter = 1;
+        let uggSoundCounter = 1;
+        let swearSoundCounter = 1;
         
         // Level scene variables
 
@@ -894,7 +910,6 @@
             } else if (currentScene == 'entername') {
                 moveGreenBall(direction);
             }
-            playSound('jump');
         }
 
         // ======== Region : game loop + update and drawing loops ========
@@ -1092,7 +1107,7 @@
                 objectsList[0].show = false;
                 instructionsBallHit = false;
                 showSwear = true;
-                playSound('titleSwear');
+                playSound('swear');
             }
             updateObjects(secondsPassed);
         }
@@ -1122,20 +1137,22 @@
                 charactersGenerator(secondsPassed);
                 updateObjects(secondsPassed);
                 cleanUpCharacters();
-                computeCharactersNextMove();
+                computeCharactersNextMove(secondsPassed);
             }
-            if (qbert[currentPlayer].moving == true && (outOfBounds(qbert[currentPlayer]) == false || isQbertOnDisk() == true)) {
+            if (qbert[currentPlayer].moving == true && (isOutOfBounds(qbert[currentPlayer]) == false || isQbertOnDisk() == true)) {
                 allowMovement = false;
                 if (computeObjectPosition(qbert[currentPlayer], secondsPassed, qbertSize, 'xy', qbert[currentPlayer].targetX, qbert[currentPlayer].targetY)) {
                     qbert[currentPlayer].moving = false;
                     qbert[currentPlayer].knelt = true;
+                    playSound('jump');
                     allowMovement = true;
                     updateCubeTopColor();
                 }
             }
-            if (outOfBounds(qbert[currentPlayer]) == true && isQbertOnDisk() == false && flyingDiskSequence == false) {
+            if (isOutOfBounds(qbert[currentPlayer]) == true && isQbertOnDisk() == false && flyingDiskSequence == false) {
                 allowMovement = false;
                 qbert[currentPlayer].knelt = false;
+                objectsList = [];
                 fallSequence(secondsPassed);
             }
             if (isQbertOnDisk() == true && qbert[currentPlayer].moving == false) {
@@ -1174,7 +1191,6 @@
                     let nextQbertMove = levelQbertMovesIterator.next();
                     if (nextQbertMove.done == false) {
                         moveCharacter(objectsList[0],nextQbertMove.value, false);
-                        playSound('jump');
                         levelSwitchMainTimer = levelSwitchMainTime;
                     } else if (levelSwitchMainTimer <= 0) {
                         sceneController('main');
@@ -1183,6 +1199,7 @@
                     if (computeObjectPosition(objectsList[0], secondsPassed, objectsList[0].width, 'xy', objectsList[0].targetX, objectsList[0].targetY)) {
                         objectsList[0].moving = false;
                         objectsList[0].knelt = true;
+                        playSound('jump');
                         let cubeNumber = getCurrentCubeIndex(objectsList[0], 3);
                         defineCubeTopColorIndex(levelPlaygroundCubesColors, cubeNumber, false);
                     }
@@ -1564,6 +1581,8 @@
             let timeRising = Math.abs(character.vy / adaptedGravity);
             let timeFalling = Math.sqrt(Math.abs(highPointY - character.targetY) / adaptedGravity);
             let jumpTime = timeRising + timeFalling;
+            character.jumpFrameTime = jumpTime / 3;
+            character.jumpFrameTimer = character.jumpFrameTime;
             character.vx = (character.targetX - character.x) / jumpTime;
         }
 
@@ -1582,7 +1601,7 @@
                     if (isQbertOnDisk() == true) {
                         character.targetX = character.x - (2 * cos30 - diskDiameter / 2 + diskOffsetX);
                         character.targetY = character.y - (sin30 + diskOffsetY);
-                    } else if (outOfBounds(character, pyramidScene) == false) {
+                    } else if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x - cos30;
                         character.targetY = character.y - (sin30 + cubeHeight);
                     } else {
@@ -1597,7 +1616,7 @@
                     if (pyramidScene == true || character.currentRow % 2 != 0) {
                         character.currentCube += 1;
                     }
-                    if (outOfBounds(character, pyramidScene) == false) {
+                    if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x + cos30;
                         character.targetY = character.y + sin30 + cubeHeight;
                     } else {
@@ -1615,7 +1634,7 @@
                     if (isQbertOnDisk() == true) {
                         character.targetX = character.x + 2 * cos30 - diskDiameter / 2 + diskOffsetX;
                         character.targetY = character.y - (sin30 + diskOffsetY);
-                    } else if (outOfBounds(character, pyramidScene) == false) {
+                    } else if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x + cos30;
                         character.targetY = character.y - (sin30 + cubeHeight);
                     } else {
@@ -1630,7 +1649,7 @@
                     if (pyramidScene == false && character.currentRow % 2 == 0) {
                         character.currentCube -= 1;
                     }
-                    if (outOfBounds(character, pyramidScene) == false) {
+                    if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x - cos30;
                         character.targetY = character.y + sin30 + cubeHeight;
                     } else {
@@ -1688,6 +1707,9 @@
                 case 'fall':
                     audioFile = soundsFolder + 'fall.mp3';
                     break;
+                case 'coilyFall':
+                    audioFile = soundsFolder + 'coily-fall.mp3';
+                    break;
                 case 'disk':
                     audioFile = soundsFolder + 'disk' + String(parameter) + '.mp3';
                     break;
@@ -1703,11 +1725,24 @@
                 case 'end':
                     audioFile = soundsFolder + 'disk7.mp3';
                     break;
-                case 'titleSwear':
-                    audioFile = soundsFolder + 'fx_18c.mp3';
+                case 'swear':
+                    audioFile = soundsFolder + 'swear' + swearSoundCounter + '.mp3';
+                    swearSoundCounter = Math.max(1, (swearSoundCounter + 1) % 9);
                     break;
                 case 'ball':
                     audioFile = soundsFolder + 'ball-jump.mp3';
+                    break;
+                case 'purpleBall':
+                    audioFile = soundsFolder + 'purple-ball-jump.mp3';
+                    break;
+                case 'coily':
+                    audioFile = soundsFolder + 'coily-jump' + coilyJumpSoundCounter + '.mp3';
+                    coilyJumpSoundCounter = Math.max(1, (coilyJumpSoundCounter + 1) % 4);
+                    break;
+                case 'ugg':
+                case 'wrongway':
+                    audioFile = soundsFolder + 'ugg' + uggSoundCounter + '.mp3';
+                    uggSoundCounter = Math.max(1, (uggSoundCounter + 1) % 9);
                     break;
             }
             if (audioFile !== '') {
@@ -1873,6 +1908,7 @@
                     let characterName = charactersList[currentCharacterIndex];
                     if (characterName == 'coily' && isCoilyPresent() == false) {
                         newCharacter.type = 'purpleball';
+                        newCharacter.jumpSound = 'purpleBall';
                     } else if (characterName == 'coily' && isCoilyPresent() == true) {
                         currentCharacterIndex = (currentCharacterIndex + 1) % charactersList.length;
                         characterName = charactersList[currentCharacterIndex];
@@ -1880,8 +1916,14 @@
                     if (characterName != 'coily') {
                         newCharacter.type = characterName;
                         switch(characterName) {
+                            case 'greenball':
                             case 'redball':
                                 newCharacter.jumpSound = 'ball';
+                                break;
+                            case 'sam':
+                            case 'slick':
+                                newCharacter.currentDirection = 'down';
+                                if (Math.floor(Math.random() * 2) == 1) { newCharacter.currentDirection = 'right'; }
                                 break;
                         }
                     }
@@ -1903,19 +1945,21 @@
 
         function cleanUpCharacters() {
             for (let i = objectsList.length - 1; i >= 0; i--) {
-                if (outOfBounds(objectsList[i]) && objectsList[i].moving == false) {
+                if (isOutOfBounds(objectsList[i]) && objectsList[i].moving == false) {
                     objectsList.splice(i, 1);
                 }
             }
         }
 
-        function computeCharactersNextMove() {
+        function computeCharactersNextMove(secondsPassed) {
             for (let i = 0; i < objectsList.length; i++) {
                 let object = objectsList[i];
                 if (object.moving == true) { continue; }
                 if (object.pauseTimer > 0) { continue; }
                 let randomDirection = Math.floor(Math.random() * 2);
                 switch (object.type) {
+                    case 'slick':
+                    case 'sam':
                     case 'greenball':
                     case 'redball':
                         object.currentDirection = 'down';
@@ -1923,7 +1967,6 @@
                         moveCharacter(object, object.currentDirection);
                         object.setTarget = 'xy';
                         object.pauseTimer = characterPauseTime;
-                        playSound(object.jumpSound);
                         break;
                     case 'purpleball':
                         if (object.currentRow != pyramidLevels) {
@@ -1932,12 +1975,57 @@
                             moveCharacter(object, object.currentDirection);
                             object.setTarget = 'xy';
                             object.pauseTimer = characterPauseTime;
+                            coilyHatchTimer = characterPauseTime;
                         } else {
-                            object.type = 'coily';
-                            object.height = object.height * 2;
-                            object.targetY -= object.height / 2;
-                            object.y -= object.height / 2;
+                            coilyHatchTimer -= secondsPassed;
+                            if (coilyHatchTimer <= 0) {
+                                object.type = 'coily';
+                                object.jumpSound = 'coily';
+                                object.height = object.height * 2;
+                                object.targetY -= object.height / 2;
+                                object.y -= object.height / 2;
+                            } 
                         }
+                        break;
+                    case 'coily':
+                        if (object.currentCube == qbert[currentPlayer].currentCube && object.currentRow == qbert[currentPlayer].currentRow) { break; }
+                        if (object.currentRow == qbert[currentPlayer].currentRow) {
+                            if (object.currentCube > qbert[currentPlayer].currentCube) {
+                                object.currentDirection = 'left';
+                            } else {
+                                object.currentDirection = 'up';
+                            }
+                        } else if (object.currentCube == qbert[currentPlayer].currentCube) {
+                            if (object.currentRow > qbert[currentPlayer].currentRow) {
+                                object.currentDirection = 'up';
+                            } else {
+                                object.currentDirection = 'down';
+                            }
+                        } else if ((object.currentRow - object.currentCube) == (qbert[currentPlayer].currentRow - qbert[currentPlayer].currentCube)) {
+                            if (object.currentRow > qbert[currentPlayer].currentRow) {
+                                object.currentDirection = 'left';
+                            } else {
+                                object.currentDirection = 'right';
+                            }
+                        } else if (object.currentCube > qbert[currentPlayer].currentCube) {
+                            if (object.currentRow > qbert[currentPlayer].currentRow) {
+                                if (object.currentCube == object.currentRow) {
+                                    object.currentDirection = 'left';
+                                } else {
+                                    object.currentDirection = 'up';
+                                }
+                            } else {
+                                object.currentDirection = 'down';
+                            }
+                        } else {
+                            if (object.currentRow > qbert[currentPlayer].currentRow) {
+                                object.currentDirection = 'up';
+                            } else {
+                                object.currentDirection = 'right';
+                            }
+                        }
+                        moveCharacter(object, object.currentDirection);
+                        object.pauseTimer = characterPauseTime;
                         break;
                 }
             }
@@ -1950,7 +2038,22 @@
                     object.moving = !computeObjectPosition(object, secondsPassed, object.height, object.setTarget, object.targetX, object.targetY);
                     object.knelt = !object.moving;
                     if (object.moving == false) {
+                        if (object.playSound == true && isOutOfBounds(object) == false) {
+                            playSound(object.jumpSound);
+                            object.playSound = false;
+                        }
                         object.pauseTimer -= secondsPassed;
+                    } else {
+                        if (object.playSound == false) { 
+                            object.playSound = true;
+                        }
+                        if (object.type == 'slick' || object.type == 'sam') {
+                            object.jumpFrameTimer -= secondsPassed;
+                            if(object.jumpFrameTimer <= 0) {
+                                object.jumpCurrentFrame = (object.jumpCurrentFrame + 1) % 3;
+                                object.jumpFrameTimer = object.jumpFrameTime;
+                            }
+                        }
                     }
                 }
             }
@@ -2279,7 +2382,7 @@
             diskTopColorList.unshift(lastColor);
         }
 
-        function outOfBounds(character, pyramidScene = true) {
+        function isOutOfBounds(character, pyramidScene = true) {
             if (pyramidScene == false) { return false; }
             if (character.currentRow < 1) { return true; }
             if (character.currentRow > pyramidLevels) { return true; }
@@ -2312,7 +2415,7 @@
         }
 
         function updateCubeTopColor() {
-            if (outOfBounds(qbert[currentPlayer]) == true) { return; }
+            if (isOutOfBounds(qbert[currentPlayer]) == true) { return; }
             if (isQbertOnDisk() == true) { return; }
 
             let cubeNumber = getPyramidCurrentCubeIndex(qbert[currentPlayer]);
@@ -2994,6 +3097,25 @@
             ctx.drawImage(imageCoily, offsetXImage, 0, coilyOriginalWidth, coilyOriginalHeight, x, y, size, size * coilyImageRatio);
         }
 
+        function drawOtherCharacters(object, sprites, direction, size, x, y, knelt = false) {
+            let offsetXImage = 0;
+            let imageOriginalWidth = 100;
+            switch (direction) {
+                case 'right':
+                case 'faceright':
+                    offsetXImage = (4 + object.jumpCurrentFrame) * imageOriginalWidth;
+                    break;
+                case 'down':
+                case 'faceleft':
+                    offsetXImage = object.jumpCurrentFrame * imageOriginalWidth;
+                    break;
+            }
+            if (knelt == true) {
+                offsetXImage += (3 - object.jumpCurrentFrame) * imageOriginalWidth;
+            }
+            ctx.drawImage(sprites, offsetXImage, 0, imageOriginalWidth, imageOriginalWidth, x, y, size, size);
+        }
+
         function clearScreen() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -3621,6 +3743,12 @@
                             break;
                         case 'coily':
                             drawCoily(object.currentDirection, object.width, object.x, object.y, object.knelt);
+                            break;
+                        case 'slick':
+                            drawOtherCharacters(object, imageSlick, object.currentDirection, object.width, object.x, object.y, object.knelt);
+                            break;
+                        case 'sam':
+                            drawOtherCharacters(object, imageSam, object.currentDirection, object.width, object.x, object.y, object.knelt);
                             break;
                     }
                 }
