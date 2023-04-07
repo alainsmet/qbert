@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Q*bert</title>
+    <title>Q*bert arcade game</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         @font-face {
@@ -1044,8 +1044,9 @@
                     qbertCharacter.currentDirection = 'down';
                     qbertCharacter.width = qbertSize;
                     qbertCharacter.height = qbertSize;
-                    qbertCharacter.currentRow = 1;
-                    qbertCharacter.currentCube = 2;
+                    qbertCharacter.targetRow = 1;
+                    qbertCharacter.targetCube = 2;
+                    copyTargetToCurrentPositions(qbertCharacter);
                     objectsList = [qbertCharacter];
                     levelPlaygroundCubesColors = [0, 0, 0, 0, 0, 0, 0, 0];
                     break;
@@ -1144,6 +1145,7 @@
                 if (computeObjectPosition(qbert[currentPlayer], secondsPassed, qbertSize, 'xy', qbert[currentPlayer].targetX, qbert[currentPlayer].targetY)) {
                     qbert[currentPlayer].moving = false;
                     qbert[currentPlayer].knelt = true;
+                    copyTargetToCurrentPositions(qbert[currentPlayer]);
                     playSound('jump');
                     allowMovement = true;
                     updateCubeTopColor();
@@ -1199,6 +1201,7 @@
                     if (computeObjectPosition(objectsList[0], secondsPassed, objectsList[0].width, 'xy', objectsList[0].targetX, objectsList[0].targetY)) {
                         objectsList[0].moving = false;
                         objectsList[0].knelt = true;
+                        copyTargetToCurrentPositions(objectsList[0]);
                         playSound('jump');
                         let cubeNumber = getCurrentCubeIndex(objectsList[0], 3);
                         defineCubeTopColorIndex(levelPlaygroundCubesColors, cubeNumber, false);
@@ -1594,9 +1597,9 @@
 
             switch (character.currentDirection) {
                 case 'left':
-                    character.currentRow -= 1;
-                    if (pyramidScene == true || character.currentRow % 2 == 0) {
-                        character.currentCube -= 1;
+                    character.targetRow -= 1;
+                    if (pyramidScene == true || character.targetRow % 2 == 0) {
+                        character.targetCube -= 1;
                     }
                     if (isQbertOnDisk() == true) {
                         character.targetX = character.x - (2 * cos30 - diskDiameter / 2 + diskOffsetX);
@@ -1612,9 +1615,9 @@
                     computeCharacterSpeeds(character, 100);
                     break;
                 case 'right':
-                    character.currentRow += 1;
-                    if (pyramidScene == true || character.currentRow % 2 != 0) {
-                        character.currentCube += 1;
+                    character.targetRow += 1;
+                    if (pyramidScene == true || character.targetRow % 2 != 0) {
+                        character.targetCube += 1;
                     }
                     if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x + cos30;
@@ -1627,9 +1630,9 @@
                     computeCharacterSpeeds(character, 25);
                     break;
                 case 'up':
-                    character.currentRow -= 1;
-                    if (pyramidScene == false && character.currentRow % 2 != 0) {
-                        character.currentCube += 1;
+                    character.targetRow -= 1;
+                    if (pyramidScene == false && character.targetRow % 2 != 0) {
+                        character.targetCube += 1;
                     }
                     if (isQbertOnDisk() == true) {
                         character.targetX = character.x + 2 * cos30 - diskDiameter / 2 + diskOffsetX;
@@ -1645,9 +1648,9 @@
                     computeCharacterSpeeds(character, 100);
                     break;
                 case 'down':
-                    character.currentRow += 1;
-                    if (pyramidScene == false && character.currentRow % 2 == 0) {
-                        character.currentCube -= 1;
+                    character.targetRow += 1;
+                    if (pyramidScene == false && character.targetRow % 2 == 0) {
+                        character.targetCube -= 1;
                     }
                     if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x - cos30;
@@ -1671,12 +1674,6 @@
             }
             qbertCurrentDisk = qbertCurrentDisk + String(qbert[currentPlayer].currentRow + 1);
             disksPresenceList[disksPositionList.findIndex(position => qbertCurrentDisk == position)] = false;
-        }
-
-        function printQbertPosition() {
-            // console.log('{X, Y} : {' + qbertPosX + ', ' + qbertPosY + '}');
-            let cubeNumber = getPyramidCurrentCubeIndex(qbert[currentPlayer]);
-            console.log('Row : ' + qbert[currentPlayer].currentRow + ' - Cube : ' + qbert[currentPlayer].currentCube + ' - Absolute cube : ' + cubeNumber);
         }
 
         function playSound(action) { 
@@ -1895,8 +1892,9 @@
                     newCharacter.height = qbertSize;
                     newCharacter.x = pyramidPosX + 6 * cos30 + 2 * cos30 * randomPosition - newCharacter.width / 2;
                     newCharacter.y = screenPaddingY;
-                    newCharacter.currentRow = 2;
-                    newCharacter.currentCube = randomPosition + 1;
+                    newCharacter.targetRow = 2;
+                    newCharacter.targetCube = randomPosition + 1;
+                    copyTargetToCurrentPositions(newCharacter);
                     newCharacter.show = true;
                     newCharacter.knelt = true;
                     newCharacter.moving = true;
@@ -1949,6 +1947,11 @@
                     objectsList.splice(i, 1);
                 }
             }
+        }
+
+        function copyTargetToCurrentPositions(object) {
+            object.currentRow = object.targetRow;
+            object.currentCube = object.targetCube;
         }
 
         function computeCharactersNextMove(secondsPassed) {
@@ -2043,6 +2046,7 @@
                             object.playSound = false;
                         }
                         object.pauseTimer -= secondsPassed;
+                        copyTargetToCurrentPositions(object);
                     } else {
                         if (object.playSound == false) { 
                             object.playSound = true;
@@ -2146,8 +2150,9 @@
         }
 
         function resetQbertPostion(player) {
-            qbert[player].currentRow = startRow;
-            qbert[player].currentCube = startCube;
+            qbert[player].targetRow = startRow;
+            qbert[player].targetCube = startCube;
+            copyTargetToCurrentPositions(qbert[player]);
             qbert[player].showOnTop = true;
             qbert[player].moving = false;
             qbert[player].knelt = false;
@@ -2384,25 +2389,25 @@
 
         function isOutOfBounds(character, pyramidScene = true) {
             if (pyramidScene == false) { return false; }
-            if (character.currentRow < 1) { return true; }
-            if (character.currentRow > pyramidLevels) { return true; }
-            if (character.currentCube < 1) { return true; }
-            if (character.currentCube > character.currentRow) { return true; }
+            if (character.targetRow < 1) { return true; }
+            if (character.targetRow > pyramidLevels) { return true; }
+            if (character.targetCube < 1) { return true; }
+            if (character.targetCube > character.targetRow) { return true; }
             return false;
         }
 
         function isQbertOnDisk() {
-            if (qbert[currentPlayer].currentRow > pyramidLevels) { return false }
-            if (qbert[currentPlayer].currentCube >= 1 && qbert[currentPlayer].currentCube <= qbert[currentPlayer].currentRow) { return false }
+            if (qbert[currentPlayer].targetRow > pyramidLevels) { return false }
+            if (qbert[currentPlayer].targetCube >= 1 && qbert[currentPlayer].targetCube <= qbert[currentPlayer].targetRow) { return false }
             for (let i = 0; i < disksPositionList.length; i++) {
                 if (disksPresenceList[i] == true) {
                     diskPosition = disksPositionList[i].substring(0,1);
                     diskRow = parseInt(disksPositionList[i].substring(1));
                     qbertPosition = 'r';
-                    if (qbert[currentPlayer].currentCube < 1) {
+                    if (qbert[currentPlayer].targetCube < 1) {
                         qbertPosition = 'l';
                     }
-                    if (diskPosition == qbertPosition && diskRow - 1 == qbert[currentPlayer].currentRow) {
+                    if (diskPosition == qbertPosition && diskRow - 1 == qbert[currentPlayer].targetRow) {
                         return true;
                     }
                 }
