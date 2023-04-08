@@ -166,6 +166,7 @@
                 this.jumpFrameTimer = this.jumpFrameTime;
                 this.jumpCurrentFrame = 0;
                 this.gravityFactor = 1;
+                this.angle = 0;
                 this.jumpSound = '';
                 this.playSound = true;
             }
@@ -510,7 +511,7 @@
         let imageCoily = document.getElementById('coilySprite');
         let imageSlick = document.getElementById('slickSprite');
         let imageSam = document.getElementById('samSprite');
-        let imageWrongWay = document.getElementById('wronwaySprite');
+        let imageWrongWay = document.getElementById('wrongwaySprite');
         let imageUgg = document.getElementById('uggSprite');
         let imageLife = document.getElementById('life');
 
@@ -1587,6 +1588,12 @@
             character.jumpFrameTime = jumpTime / 3;
             character.jumpFrameTimer = character.jumpFrameTime;
             character.vx = (character.targetX - character.x) / jumpTime;
+            if (character.angle != 0) {
+                let transposedVx = character.vx * Math.cos(character.angle * Math.PI / 180) + character.vy * Math.cos((character.angle + 90) * Math.PI / 180);
+                let transposedVy = character.vx * Math.sin(character.angle * Math.PI / 180) + character.vy * Math.sin((character.angle + 90) * Math.PI / 180);
+                character.vx = transposedVx;
+                character.vy = transposedVy;
+            }
         }
 
         function moveCharacter(character, direction, pyramidScene = true) {
@@ -1923,6 +1930,26 @@
                                 newCharacter.currentDirection = 'down';
                                 if (Math.floor(Math.random() * 2) == 1) { newCharacter.currentDirection = 'right'; }
                                 break;
+                            case 'wrongway':
+                                newCharacter.gravityFactor = 1;
+                                newCharacter.angle = -120;
+                                newCharacter.x = screenPaddingX;
+                                newCharacter.y = pyramidPosY + 500;
+                                newCharacter.vx = 0;
+                                newCharacter.vy = 0;
+                                newCharacter.setTarget = 'off';
+                                playSound('wrongway');
+                                break;
+                            case 'ugg':
+                                newCharacter.gravityFactor = 1;
+                                newCharacter.angle = -240;
+                                newCharacter.x = canvas.width - screenPaddingX;
+                                newCharacter.y = pyramidPosY + 500;
+                                newCharacter.vx = 0;
+                                newCharacter.vy = 0;
+                                newCharacter.setTarget = 'off';
+                                playSound('ugg');
+                                break;
                         }
                     }
                     objectsList.push(newCharacter);
@@ -2133,9 +2160,19 @@
                     }
                     break;
             }
-            object.x += object.vx * secondsPassed;
-            object.y += gravity * object.gravityFactor * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
-            object.vy += gravity * object.gravityFactor * secondsPassed;
+            let adjustedGravity = gravity * object.gravityFactor;
+            if (object.angle == 0) {
+                object.x += object.vx * secondsPassed;
+                object.y += adjustedGravity * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
+                object.vy += adjustedGravity * secondsPassed;
+            } else {
+                let gravityX = adjustedGravity * Math.cos((object.angle + 90) * Math.PI / 180);
+                let gravityY = adjustedGravity * Math.sin((object.angle + 90) * Math.PI / 180);
+                object.x += gravityY * secondsPassed ** 2 / 2 + object.vx * secondsPassed;
+                object.y += gravityY * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
+                object.vx += gravityX * secondsPassed;
+                object.vy += gravityY * secondsPassed;
+            }
             return false;
         }
 
@@ -3754,6 +3791,12 @@
                             break;
                         case 'sam':
                             drawOtherCharacters(object, imageSam, object.currentDirection, object.width, object.x, object.y, object.knelt);
+                            break;
+                        case 'wrongway':
+                            drawOtherCharacters(object, imageWrongWay, object.currentDirection, object.width, object.x, object.y, object.knelt);
+                            break;
+                        case 'ugg':
+                            drawOtherCharacters(object, imageUgg, object.currentDirection, object.width, object.x, object.y, object.knelt);
                             break;
                     }
                 }
