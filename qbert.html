@@ -157,6 +157,7 @@
                 this.setTarget = 'off';
                 this.targetX = 0;
                 this.targetY = 0;
+                this.targetYHitDown = true;
                 this.vx = 0;
                 this.vy = 0;
                 this.width = 0;
@@ -164,11 +165,16 @@
                 this.pauseTimer = 0;
                 this.jumpFrameTime = 0.3;
                 this.jumpFrameTimer = this.jumpFrameTime;
+                this.jumpPeakTime = 0;
+                this.jumpPeakTimer = this.jumpPeakTime;
                 this.jumpCurrentFrame = 0;
                 this.gravityFactor = 1;
                 this.angle = 0;
+                this.landingSound = '';
                 this.jumpSound = '';
-                this.playSound = true;
+                this.playLandingSound = true;
+                this.playJumpSound = false;
+                this.playFallSound = true;
             }
         }
 
@@ -561,7 +567,7 @@
         let flyingDiskTime = 3;
         let flyingDiskFallTime = 1;
         let backgroundFlashingTime = 0.3;
-        let characterPauseTime = 0.3;
+        let characterPauseTime = 0.2;
         let endLevelTimer = endLevelTime;
         let flashColorTimer = flashColorTime;
         let nextRoundTimer = nextRoundTime;
@@ -576,11 +582,13 @@
         let playEndLevelSound = true;
         let flyingDiskSequence = false;
         let showFlyingDisk = false;
+        let generateCharacters = true;
         let remainingFlyingDisksCounter = 0;
         let currentCharacterIndex = 0;
         let coilyJumpSoundCounter = 1;
         let uggSoundCounter = 1;
         let swearSoundCounter = 1;
+        let samSoundCounter = 1;
         
         // Level scene variables
 
@@ -913,7 +921,7 @@
             }
         }
 
-        // ======== Region : game loop + update and drawing loops ========
+// ======== Region : game loop + update and drawing loops ========
 
         function gameLoop(timeStamp) {
             secondsPassed = (timeStamp - oldTimeStamp) / 1000;
@@ -987,6 +995,7 @@
                     playEndLevelSound = true;
                     flyingDiskSequence = false;
                     showFlyingDisk = false;
+                    generateCharacters = true;
                     remainingFlyingDisksCounter = 0;
                     endLevelTimer = endLevelTime;
                     nextRoundTimer = nextRoundTime;
@@ -996,7 +1005,7 @@
                     backgroundFlashingTimer = backgroundFlashingTime;
                     currentMainSceneBackgroundColor = backgroundMainColor;
                     currentCharacterIndex = 0;
-                    objectsList = [];
+                    resetObjectsList();
                     break;
                 case 'title':
                     setDiskColorList(0);
@@ -1136,7 +1145,9 @@
             animateGradient(secondsPassed);
             computeExtraLife();
             if (checkRoundCompletion() == false) {
-                charactersGenerator(secondsPassed);
+                if (generateCharacters == true) {
+                    charactersGenerator(secondsPassed);
+                }
                 updateObjects(secondsPassed);
                 cleanUpCharacters();
                 computeCharactersNextMove(secondsPassed);
@@ -1155,7 +1166,7 @@
             if (isOutOfBounds(qbert[currentPlayer]) == true && isQbertOnDisk() == false && flyingDiskSequence == false) {
                 allowMovement = false;
                 qbert[currentPlayer].knelt = false;
-                objectsList = [];
+                resetObjectsList();
                 fallSequence(secondsPassed);
             }
             if (isQbertOnDisk() == true && qbert[currentPlayer].moving == false) {
@@ -1255,6 +1266,7 @@
                     computeQbertStartPosition(currentPlayer);
                     allowMovement = true;
                     flyingDiskSequence = false;
+                    generateCharacters = true;
                 } 
             }
         }
@@ -1329,7 +1341,7 @@
                 if (showBonus == false) {
                     updateScore(getBonus());
                 }
-                objectsList = [];
+                resetObjectsList();
                 showBonus = true;
                 countDiskBonus = hasRemainingDisks();
                 nextRoundTimer = nextRoundTime;
@@ -1579,6 +1591,11 @@
         }
 
         function computeCharacterSpeeds(character, jumpHeight) {
+            
+            if (character.angle != 0) {
+                transposeCoordinates(character);
+            }
+            
             let adaptedGravity = gravity * character.gravityFactor;
             character.vy = - Math.sqrt(2 * adaptedGravity * jumpHeight);
             let highPointY = character.y - jumpHeight;
@@ -1587,13 +1604,44 @@
             let jumpTime = timeRising + timeFalling;
             character.jumpFrameTime = jumpTime / 3;
             character.jumpFrameTimer = character.jumpFrameTime;
+            character.jumpPeakTime = timeRising;
+            character.jumpPeakTimer = character.jumpPeakTime;
             character.vx = (character.targetX - character.x) / jumpTime;
+            
             if (character.angle != 0) {
-                let transposedVx = character.vx * Math.cos(character.angle * Math.PI / 180) + character.vy * Math.cos((character.angle + 90) * Math.PI / 180);
-                let transposedVy = character.vx * Math.sin(character.angle * Math.PI / 180) + character.vy * Math.sin((character.angle + 90) * Math.PI / 180);
+                let transposedVx = character.vx * Math.cos(character.angle * Math.PI / 180) - character.vy * Math.sin(character.angle * Math.PI / 180);
+                let transposedVy = character.vx * Math.sin(character.angle * Math.PI / 180) + character.vy * Math.cos(character.angle * Math.PI / 180);
                 character.vx = transposedVx;
                 character.vy = transposedVy;
+                transposeCoordinates(character, false);
             }
+        }
+
+        function transposeCoordinates(character, globalToLocal = true) {
+            let cosAngle = Math.cos(character.angle * Math.PI / 180);
+            let sinAngle = Math.sin(character.angle * Math.PI / 180);
+
+            let transposedX = 0;
+            let transposedY = 0;
+            let transposedTargetX = 0;
+            let transposedTargetY = 0;
+
+            if (globalToLocal == true) {
+                transposedX = character.x * cosAngle + character.y * sinAngle;
+                transposedY = - character.x * sinAngle + character.y * cosAngle;
+                transposedTargetX = character.targetX * cosAngle + character.targetY * sinAngle;
+                transposedTargetY = - character.targetX * sinAngle + character.targetY * cosAngle;
+            } else {
+                transposedX = character.x * cosAngle - character.y * sinAngle;
+                transposedY = character.x * sinAngle + character.y * cosAngle;
+                transposedTargetX = character.targetX * cosAngle - character.targetY * sinAngle;
+                transposedTargetY = character.targetX * sinAngle + character.targetY * cosAngle;
+            }
+
+            character.x = transposedX;
+            character.y = transposedY;
+            character.targetX = transposedTargetX;
+            character.targetY = transposedTargetY;
         }
 
         function moveCharacter(character, direction, pyramidScene = true) {
@@ -1608,7 +1656,7 @@
                     if (pyramidScene == true || character.targetRow % 2 == 0) {
                         character.targetCube -= 1;
                     }
-                    if (isQbertOnDisk() == true) {
+                    if (isQbertOnDisk() == true && character.type == 'qbert') {
                         character.targetX = character.x - (2 * cos30 - diskDiameter / 2 + diskOffsetX);
                         character.targetY = character.y - (sin30 + diskOffsetY);
                     } else if (isOutOfBounds(character, pyramidScene) == false) {
@@ -1629,9 +1677,24 @@
                     if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x + cos30;
                         character.targetY = character.y + sin30 + cubeHeight;
+                        if (character.type == 'wrongway') {
+                            character.targetY = character.y - sin30 - cubeHeight;
+                        }
+                        if (character.type == 'ugg') {
+                            character.targetX = character.x - 2 * cos30;
+                            character.targetY = character.y;
+                        }
                     } else {
                         character.targetX = character.x + 2 * cos30;
                         character.targetY = canvas.height + character.height;
+                        if (character.type == 'wrongway') {
+                            character.targetX = canvas.width + character.width;
+                            character.targetY = character.y - sin30 - cubeHeight;
+                        }
+                        if (character.type == 'ugg') {
+                            character.targetX = - character.width;
+                            character.targetY = character.y;
+                        }
                         character.showOnTop = true;
                     }
                     computeCharacterSpeeds(character, 25);
@@ -1641,7 +1704,7 @@
                     if (pyramidScene == false && character.targetRow % 2 != 0) {
                         character.targetCube += 1;
                     }
-                    if (isQbertOnDisk() == true) {
+                    if (isQbertOnDisk() == true && character.type == 'qbert') {
                         character.targetX = character.x + 2 * cos30 - diskDiameter / 2 + diskOffsetX;
                         character.targetY = character.y - (sin30 + diskOffsetY);
                     } else if (isOutOfBounds(character, pyramidScene) == false) {
@@ -1662,10 +1725,26 @@
                     if (isOutOfBounds(character, pyramidScene) == false) {
                         character.targetX = character.x - cos30;
                         character.targetY = character.y + sin30 + cubeHeight;
+                        if (character.type == 'wrongway') {
+                            character.targetX = character.x + 2 * cos30;
+                            character.targetY = character.y;
+                        }
+                        if (character.type == 'ugg') {
+                            character.targetX = character.x - cos30;
+                            character.targetY = character.y - sin30 - cubeHeight;
+                        }
                     } else {
                         character.targetX = character.x - 2 * cos30;
                         character.targetY = canvas.height + character.height;
                         character.showOnTop = true;
+                        if (character.type == 'wrongway') {
+                            character.targetX = canvas.width + character.width;
+                            character.targetY = character.y;
+                        }
+                        if (character.type == 'ugg') {
+                            character.targetX = - character.width;
+                            character.targetY = character.y - sin30 - cubeHeight;
+                        }
                     }
                     computeCharacterSpeeds(character, 25);
                     break;
@@ -1747,6 +1826,11 @@
                 case 'wrongway':
                     audioFile = soundsFolder + 'ugg' + uggSoundCounter + '.mp3';
                     uggSoundCounter = Math.max(1, (uggSoundCounter + 1) % 9);
+                    break;
+                case 'sam':
+                case 'slick':
+                    audioFile = soundsFolder + 'sam' + samSoundCounter + '.mp3';
+                    samSoundCounter = Math.max(1, (samSoundCounter + 1) % 9);
                     break;
             }
             if (audioFile !== '') {
@@ -1884,6 +1968,19 @@
             cos30 = cubeSize * Math.cos(30 * Math.PI / 180);
         }
 
+        function resetObjectsList() {
+            objectsList = [];
+            characterDropTimer = characterDropTime;
+        }
+
+        function resetObjectsListExcept(characterType) {
+            for (let i = objectsList.length - 1; i >= 0; i--) {
+                if (objectsList[i].type != characterType) {
+                    objectsList.splice(i, 1);
+                }
+            }
+        }
+
         function charactersGenerator(secondsPassed) {
             let currentLevel = currentLevelPlayer[currentPlayer];
             let currentRound = currentRoundPlayer[currentPlayer];
@@ -1891,7 +1988,6 @@
             if (charactersList.length > 0) {
                 characterDropTimer -= secondsPassed;
                 if (characterDropTimer <= 0) {
-
                     let newCharacter = new Character('');
                     let randomPosition = Math.floor(Math.random() * 2);
                     let randomGravityFactor = minCharacterGravityFactor * Math.max(1, Math.floor(Math.random() * 5));
@@ -1909,11 +2005,12 @@
                     newCharacter.targetY = pyramidPosY + 2 * sin30 + cubeHeight - newCharacter.height;
                     newCharacter.gravityFactor = randomGravityFactor;
                     newCharacter.pauseTimer = characterPauseTime;
+                    newCharacter.playFallSound = true;
 
                     let characterName = charactersList[currentCharacterIndex];
                     if (characterName == 'coily' && isCoilyPresent() == false) {
                         newCharacter.type = 'purpleball';
-                        newCharacter.jumpSound = 'purpleBall';
+                        newCharacter.landingSound = 'purpleBall';
                     } else if (characterName == 'coily' && isCoilyPresent() == true) {
                         currentCharacterIndex = (currentCharacterIndex + 1) % charactersList.length;
                         characterName = charactersList[currentCharacterIndex];
@@ -1924,30 +2021,44 @@
                             case 'greenball':
                             case 'redball':
                                 newCharacter.jumpSound = 'ball';
+                                newCharacter.landingSound = 'purpleBall';
                                 break;
                             case 'sam':
                             case 'slick':
                                 newCharacter.currentDirection = 'down';
+                                newCharacter.landingSound = 'sam';
                                 if (Math.floor(Math.random() * 2) == 1) { newCharacter.currentDirection = 'right'; }
                                 break;
                             case 'wrongway':
+                                newCharacter.targetRow = 1;
+                                newCharacter.targetCube = 1;
                                 newCharacter.gravityFactor = 1;
                                 newCharacter.angle = -120;
-                                newCharacter.x = screenPaddingX;
-                                newCharacter.y = pyramidPosY + 500;
                                 newCharacter.vx = 0;
                                 newCharacter.vy = 0;
-                                newCharacter.setTarget = 'off';
+                                newCharacter.setTarget = 'xy';
+                                newCharacter.targetX = pyramidPosX + cos30 / 2 - newCharacter.width;
+                                newCharacter.targetY = pyramidPosY + getPyramidHeight() - cubeHeight / 2 - newCharacter.height / 2;
+                                newCharacter.targetYHitDown = false;
+                                newCharacter.x = newCharacter.targetX - 100;
+                                newCharacter.y = newCharacter.targetY + 100 * Math.tan(30);
                                 playSound('wrongway');
                                 break;
                             case 'ugg':
+                                newCharacter.targetRow = 1;
+                                newCharacter.targetCube = 1;
                                 newCharacter.gravityFactor = 1;
                                 newCharacter.angle = -240;
                                 newCharacter.x = canvas.width - screenPaddingX;
                                 newCharacter.y = pyramidPosY + 500;
                                 newCharacter.vx = 0;
                                 newCharacter.vy = 0;
-                                newCharacter.setTarget = 'off';
+                                newCharacter.setTarget = 'xy';
+                                newCharacter.targetX = pyramidPosX + getPyramidWidth() - cos30 / 2;
+                                newCharacter.targetY = pyramidPosY + getPyramidHeight() - cubeHeight / 2 - newCharacter.height / 2;
+                                newCharacter.targetYHitDown = false;
+                                newCharacter.x = newCharacter.targetX + 100;
+                                newCharacter.y = newCharacter.targetY + 100 * Math.tan(30);
                                 playSound('ugg');
                                 break;
                         }
@@ -1990,6 +2101,8 @@
                 switch (object.type) {
                     case 'slick':
                     case 'sam':
+                    case 'wrongway':
+                    case 'ugg':
                     case 'greenball':
                     case 'redball':
                         object.currentDirection = 'down';
@@ -2010,7 +2123,7 @@
                             coilyHatchTimer -= secondsPassed;
                             if (coilyHatchTimer <= 0) {
                                 object.type = 'coily';
-                                object.jumpSound = 'coily';
+                                object.landingSound = 'coily';
                                 object.height = object.height * 2;
                                 object.targetY -= object.height / 2;
                                 object.y -= object.height / 2;
@@ -2065,18 +2178,23 @@
             for (let i = 0; i < objectsList.length; i++) {
                 let object = objectsList[i];
                 if (object.show == true) {
-                    object.moving = !computeObjectPosition(object, secondsPassed, object.height, object.setTarget, object.targetX, object.targetY);
+                    object.moving = !computeObjectPosition(object, secondsPassed, object.height, object.setTarget, object.targetX, object.targetY, object.targetYHitDown);
                     object.knelt = !object.moving;
                     if (object.moving == false) {
-                        if (object.playSound == true && isOutOfBounds(object) == false) {
-                            playSound(object.jumpSound);
-                            object.playSound = false;
+                        if (object.playLandingSound == true && isOutOfBounds(object) == false) {
+                            playSound(object.landingSound);
+                            object.playLandingSound = false;
                         }
+                        object.playJumpSound = true;
                         object.pauseTimer -= secondsPassed;
                         copyTargetToCurrentPositions(object);
                     } else {
-                        if (object.playSound == false) { 
-                            object.playSound = true;
+                        if (object.playLandingSound == false) { 
+                            object.playLandingSound = true;
+                        }
+                        if (object.playJumpSound == true) {
+                            playSound(object.jumpSound);
+                            object.playJumpSound = false;
                         }
                         if (object.type == 'slick' || object.type == 'sam') {
                             object.jumpFrameTimer -= secondsPassed;
@@ -2085,6 +2203,16 @@
                                 object.jumpFrameTimer = object.jumpFrameTime;
                             }
                         }
+                        if (object.type == 'coily' && isOutOfBounds(object) == true && object.playFallSound == true) {
+                            object.jumpPeakTimer -= secondsPassed;
+                            if (object.jumpPeakTimer <= 0) {
+                                playSound('coilyFall');
+                                resetObjectsListExcept('coily');
+                                object.playFallSound = false;
+                                object.showOnTop = false;
+                                generateCharacters = false;
+                            }
+                        } 
                     }
                 }
             }
@@ -2141,13 +2269,24 @@
                     }
                     break;
                 case 'xy':
-                    if (object.vx > 0 && (object.x - targetX) > 0) {
-                        object.x = targetX;
-                        object.vx = 0;
-                    } else if (object.vx < 0 && (object.x - targetX) < 0) {
+                    let incrementX = Math.abs(object.vx * secondsPassed);
+                    if (Math.abs(object.x - targetX) <= incrementX) {
                         object.x = targetX;
                         object.vx = 0;
                     }
+                    // if (object.vx > 0 && (object.x - targetX) > 0) {
+                    //     object.x = targetX;
+                    //     object.vx = 0;
+                    //     if (object.type == 'wrongway') {
+                    //         console.log('hit1');
+                    //     }
+                    // } else if (object.vx < 0 && (object.x - targetX) < 0) {
+                    //     object.x = targetX;
+                    //     object.vx = 0;
+                    //     if (object.type == 'wrongway') {
+                    //         console.log('hit2');
+                    //     }
+                    // }
                     if (object.vy > 0 && (object.y - targetY) > 0 && targetYHitDown == true) {
                         object.y = targetY;
                         object.vy = 0;
@@ -2168,10 +2307,11 @@
             } else {
                 let gravityX = adjustedGravity * Math.cos((object.angle + 90) * Math.PI / 180);
                 let gravityY = adjustedGravity * Math.sin((object.angle + 90) * Math.PI / 180);
-                object.x += gravityY * secondsPassed ** 2 / 2 + object.vx * secondsPassed;
+                object.x += gravityX * secondsPassed ** 2 / 2 + object.vx * secondsPassed;
                 object.y += gravityY * secondsPassed ** 2 / 2 + object.vy * secondsPassed;
                 object.vx += gravityX * secondsPassed;
                 object.vy += gravityY * secondsPassed;
+                //console.log(object.type, 'vx :', object.vx.toFixed(1), gravityX.toFixed(1), 'vy :', object.vy.toFixed(1), gravityY.toFixed(1));
             }
             return false;
         }
@@ -2198,9 +2338,17 @@
             qbert[player].width = qbertSize;
         }
 
+        function getPyramidHeight() {
+            return (sin30 + cubeHeight) * pyramidLevels + sin30;
+        }
+
+        function getPyramidWidth() {
+            return (2 * cos30) * pyramidLevels;
+        }
+
         function computePyramidPosition(horizontalAlignment, verticalAlignment, x = 0, y = 0) {
-            const pyramidHeight = (sin30 + cubeHeight) * pyramidLevels + sin30;
-            const pyramidWidth = (2 * cos30) * pyramidLevels;
+            const pyramidHeight = getPyramidHeight();
+            const pyramidWidth = getPyramidWidth();
 
             switch (horizontalAlignment) {
                 case 'center':
@@ -2559,6 +2707,7 @@
             if (qbert[currentPlayer].showOnTop == false  && showBonus == false) {
                 drawQbert(qbert[currentPlayer].currentDirection, qbertSize, qbert[currentPlayer].x, qbert[currentPlayer].y, qbert[currentPlayer].knelt);
             }
+            drawObjects(false);
             drawPyramid(pyramidPosX, pyramidPosY, pyramidLevels);
             drawChangeTo(screenPaddingX, pyramidPosY);
             drawScore();
@@ -2576,7 +2725,7 @@
             if (gameOverPlayer[currentPlayer] == true) {
                 drawGameOver();
             }
-            drawObjects();
+            drawObjects(true);
         }
 
         function drawTitleScene() {
@@ -3769,10 +3918,10 @@
             ctx.restore();
         }
 
-        function drawObjects() {
+        function drawObjects(objectsOnTop = true) {
             for (let i = 0; i < objectsList.length; i++) {
                 let object = objectsList[i];
-                if (object.show == true) {
+                if (object.show == true && object.showOnTop == objectsOnTop) {
                     switch (object.type) {
                         case 'greenball':
                         case 'purpleball':
