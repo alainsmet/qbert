@@ -1321,7 +1321,11 @@
                     computeQbertStartPosition(currentPlayer);
                     allowMovement = true;
                     flyingDiskSequence = false;
-                    generateCharacters = true;
+                    if (generateCharacters == false) {
+                        generateCharacters = true;
+                        characterDropTimer = characterDropTime;
+                    }
+                    
                 } 
             }
         }
@@ -2042,7 +2046,7 @@
                             case 'wrongway':
                                 newCharacter.targetRow = 1;
                                 newCharacter.targetCube = 1;
-                                newCharacter.gravityFactor = 0.1;
+                                newCharacter.gravityFactor = 0.8;
                                 newCharacter.angle = -120;
                                 newCharacter.vx = 0;
                                 newCharacter.vy = 0;
@@ -2057,7 +2061,7 @@
                             case 'ugg':
                                 newCharacter.targetRow = 1;
                                 newCharacter.targetCube = 1;
-                                newCharacter.gravityFactor = 1;
+                                newCharacter.gravityFactor = 0.8;
                                 newCharacter.angle = -240;
                                 newCharacter.vx = 0;
                                 newCharacter.vy = 0;
@@ -3340,24 +3344,43 @@
         }
 
         function drawScore() {
-            ctx.font = fontsList.bold;
+            drawScorePlayer(0, (currentPlayer == 0) ? true : false);
+            if (nbPlayer == 2) {
+                drawScorePlayer(1, (currentPlayer == 1) ? true : false);
+            }
+        }
+
+        function drawScorePlayer(player, isActive) {
             
-            let stringToWrite = playerString + ' ' + (currentPlayer + 1);
+            ctx.font = fontsList.bold;
+            ctx.fillStyle = fontsColors.purple;
+
+            let stringToWrite = playerString + ' ' + (player + 1);
             let stringPosX = screenPaddingX;
-            if (currentPlayer === 1) {
+            if (player == 1) {
                 stringPosX = canvas.width - screenPaddingX - ctx.measureText(stringToWrite).width;
             }
-            let gradientPlayerString = ctx.createLinearGradient(stringPosX, screenPaddingY, stringPosX, 25);
-            for (let i = 0; i < gradientStopPlayerString.length;i++) {
-                gradientPlayerString.addColorStop(gradientStopPlayerString[i].stop, gradientStopPlayerString[i].color);
+
+            if (isActive == true) {
+                let fillRectMargin = 3;
+                ctx.fillStyle = fontsColors.red;
+                ctx.fillRect(stringPosX + ctx.measureText(stringToWrite).width - ctx.measureText(player).width - fillRectMargin, screenPaddingY - fontHeightSpacing + fontDefaultSize / 4, ctx.measureText(player).width + 2 * fillRectMargin, fontHeightSpacing);
+                stringToWrite = playerString + ' ';
+                ctx.fillStyle = topColorList[targetTopColorIndex()];
+                ctx.fillText(player + 1, stringPosX + ctx.measureText(stringToWrite).width, screenPaddingY);
+                let gradientPlayerString = ctx.createLinearGradient(stringPosX, screenPaddingY, stringPosX, fontDefaultSize);
+                for (let i = 0; i < gradientStopPlayerString.length;i++) {
+                    gradientPlayerString.addColorStop(gradientStopPlayerString[i].stop, gradientStopPlayerString[i].color);
+                }
+                ctx.fillStyle = gradientPlayerString;
+                
             }
-            ctx.fillStyle = gradientPlayerString;
             ctx.fillText(stringToWrite, stringPosX, screenPaddingY);
             ctx.font = fontsList.standard;
             ctx.fillStyle = fontsColors.orange;
-            stringToWrite = scorePlayer[currentPlayer];
+            stringToWrite = scorePlayer[player];
             stringPosX = screenPaddingX;
-            if (currentPlayer === 1) {
+            if (player == 1) {
                 stringPosX = canvas.width - screenPaddingX - ctx.measureText(stringToWrite).width;
             }
             ctx.fillText(stringToWrite, stringPosX, screenPaddingY + fontHeightSpacing);
