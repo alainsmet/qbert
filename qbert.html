@@ -219,11 +219,14 @@
         let livesPlayer = [defaultStartLives, defaultStartLives];
         let extraLivesPlayer = [0, 0];
 
+        // Points-related variables
+
         let pointsFirstExtraLife = 8000;
         let pointsAdditionalLife = 14000;
         let pointsTargetColor = 25;
         let pointsIntermediateColor = 15;
         let pointsRemainingDisk = 50;
+        let pointsCoilyFall = 500;
 
         let highScoresTable = [
             { name: 'TJC', score: 3000 }, { name: 'JML', score: 2500 }, { name: 'JAH', score: 2000 },
@@ -1064,6 +1067,18 @@
                 case 'demo':
                     allowMovement = false;
                     demoSceneTimer = demoSceneTime;
+                    let qbertDemo = new Character('qbert');
+                    qbertDemo.width = qbertSize;
+                    qbertDemo.height = qbertSize;
+                    qbertDemo.currentCube = 1;
+                    qbertDemo.currentRow = 1;
+                    copyTargetToCurrentPositions(qbertDemo);
+                    computeObjectStartPosition(qbertDemo);
+                    qbertDemo.targetX = qbertDemo.x;
+                    qbertDemo.targetY = qbertDemo.y;
+                    qbertDemo.setTarget = 'xy';
+                    qbertDemo.currentDirection = 'down';
+                    objectsList = [qbertDemo];
                     break;
                 case 'level':
                     playLevelSound = true;
@@ -2108,6 +2123,9 @@
         function cleanUpCharacters() {
             for (let i = objectsList.length - 1; i >= 0; i--) {
                 if (isOutOfBounds(objectsList[i]) && objectsList[i].moving == false) {
+                    if (objectsList[i].type == 'coily') {
+                        updateScore(pointsCoilyFall);
+                    }
                     objectsList.splice(i, 1);
                 }
             }
@@ -2403,6 +2421,15 @@
                     pyramidPosY = (canvas.height - pyramidHeight) / 2;
                     break;
             }
+        }
+
+        function computeObjectStartPosition(object) {
+            let startLevel = Math.min(pyramidLevels, object.currentRow);
+            let startBlock = Math.min(object.currentCube, startLevel);
+            let blockHorizontalOffset = 2 * (startBlock - 1);
+            let firstBlockHorizontalOffset = pyramidLevels - (startLevel - 1);
+            object.x = (firstBlockHorizontalOffset + blockHorizontalOffset) * cos30 + pyramidPosX - object.width / 2;
+            object.y = startLevel * sin30 + (cubeHeight * (startLevel - 1)) + pyramidPosY - object.height;
         }
 
         function computeQbertStartPosition(player) {
@@ -2799,6 +2826,8 @@
             drawCredits();
             drawPushStart();
             drawQbertLogo(screenPaddingX, screenPaddingY, 250, 80);
+            drawPyramid(pyramidPosX, pyramidPosY, pyramidLevels);
+            drawObjects();
         }
 
         function drawHighScoresScene() {

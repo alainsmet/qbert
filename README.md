@@ -23,11 +23,13 @@ The keyboard controls are as follow :
 
 ## Current development status
 
-This project is currently under development, the main items that need to be implemented are :
-* Collisions with enemies
-* Tune the characters generator for each level / round
-* Freeze the enemies when Q*bert jumps on a green ball
-* Logic behind Sam and Slick when they jump on a cube
-* Global interface to look nicer
+This project is currently under development, the items that need to be implemented are :
+- [] Collisions with enemies
+- [] Tune the characters generator for each level / round
+- [] Freeze the enemies when Q*bert jumps on a green ball
+- [] Logic behind Sam and Slick when they jump on a cube
+- [] Global interface to look nicer
+- [] Improving transition between players in multiplayer mode
+- [] Demo scene
 
 ![Game screenshot](screenshot.png)
