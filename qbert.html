@@ -227,6 +227,8 @@
         let pointsIntermediateColor = 15;
         let pointsRemainingDisk = 50;
         let pointsCoilyFall = 500;
+        let pointsSamSlick = 300;
+        let pointsGreenBall = 100;
 
         let highScoresTable = [
             { name: 'TJC', score: 3000 }, { name: 'JML', score: 2500 }, { name: 'JAH', score: 2000 },
@@ -1231,6 +1233,7 @@
                 updateObjects(secondsPassed);
                 cleanUpCharacters();
                 computeCharactersNextMove(secondsPassed);
+                checkCollisions();
             }
             if (qbert[currentPlayer].moving == true && (isOutOfBounds(qbert[currentPlayer]) == false || isQbertOnDisk() == true)) {
                 allowMovement = false;
@@ -2240,7 +2243,7 @@
                             playSound(object.jumpSound);
                             object.playJumpSound = false;
                         }
-                        if (object.type == 'slick' || object.type == 'sam') {
+                        if (object.type == 'slick' || object.type == 'sam' || object.type == 'ugg' || object.type == 'wrongway') {
                             object.jumpFrameTimer -= secondsPassed;
                             if(object.jumpFrameTimer <= 0) {
                                 object.jumpCurrentFrame = (object.jumpCurrentFrame + 1) % 3;
@@ -2744,6 +2747,62 @@
                 case 4:
                 case 5:                
                     return (currentTopColorIndex[currentPlayer] + 2) % topColorList.length;
+            }
+        }
+
+        function checkCollisions() {
+            for (let i = 0; i < objectsList.length; i++) {
+                if (isColliding(qbert[currentPlayer], objectsList[i])) {
+                    executeCollisionAction(objectsList[i]);
+                    // console.log('Collision with ' + objectsList[i].type);
+                    return;
+                }
+            }
+        }
+
+        function isColliding(qbert, object) {
+            if (checkCubeDestination(qbert, object) == true && isOverlapping(qbert, object) == true) {
+                return true;
+            }
+            return false;
+        }
+
+        function checkCubeDestination(qbert, object) {
+            if (object.type == 'wrongway' || object.type == 'ugg') { return false; }
+
+            if (isOutOfBounds(object)) { return false; }
+
+            let conditionQbertTargetCube = (object.currentCube == qbert.targetCube && object.currentRow == qbert.targetRow);
+            let conditionObjectTargetCube = (object.targetCube == qbert.currentCube && object.targetRow == qbert.currentRow);
+            if (conditionQbertTargetCube == true && conditionObjectTargetCube == true) { return true; }
+
+            if (object.targetCube == qbert.targetCube && object.targetRow == qbert.targetRow) { return true; }
+
+            return false;
+        }
+
+        function isOverlapping(qbert, object) {
+            if (object.x > qbert.x + qbert.width || qbert.x > object.x + object.width || object.y > qbert.y + qbert.height || qbert.y > object.y + object.height) {
+                return false;
+            }
+            return true;
+        }
+
+        function executeCollisionAction(object) {
+            switch(object.type) {
+                case 'coily':
+                    break;
+                case 'redball':
+                case 'purpleball':
+                    break;
+                case 'ugg':
+                case 'wrongway':
+                    break;
+                case 'greenball':
+                    break;
+                case 'sam':
+                case 'slick':
+                    break;
             }
         }
 
