@@ -293,6 +293,7 @@
         let useIndicationsString = ['USE', 'TO ERASE', 'WHEN DONE'];
         let instructionsLines = [];
         let playerString = 'PLAYER';
+        let playerSelectString = ['PLAYER ONE', 'PLAYER TWO'];
 
         let creditsNumber = 0;
 
@@ -573,6 +574,8 @@
         let flyingDiskFallTime = 1;
         let backgroundFlashingTime = 0.3;
         let characterPauseTime = 0.2;
+        let multiplayerStartTime = 4;
+        let multiplayerStartTimer = multiplayerStartTime;
         let endLevelTimer = endLevelTime;
         let flashColorTimer = flashColorTime;
         let nextRoundTimer = nextRoundTime;
@@ -588,6 +591,7 @@
         let flyingDiskSequence = false;
         let showFlyingDisk = false;
         let generateCharacters = true;
+        let newPlayerStart = false;
         let remainingFlyingDisksCounter = 0;
         let currentCharacterIndex = 0;
         let coilyJumpSoundCounter = 1;
@@ -671,11 +675,11 @@
 
         levelSetup();
         updateColorInputValues();
-        buildTopColorIndexArray();
+        buildTopColorIndexArrayAllPlayers();
         
         initInstructionsLines();
         computeSinCosCube();
-        computePositions();
+        computePositionsAllPlayers();
         sceneController(currentScene);
         
 // ======== Region : start game function ========
@@ -692,7 +696,7 @@
             if (isNaN(parsed)) { parsed = 768; }
             if (parsed <= 0) { parsed = 768; }
             document.getElementById('qbert-canvas').setAttribute('width', parsed);
-            computePositions();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('canvasHeight').addEventListener('change', function(e) {
@@ -700,7 +704,7 @@
             if (isNaN(parsed)) { parsed = 820; }
             if (parsed <= 0) { parsed = 820; }
             document.getElementById('qbert-canvas').setAttribute('height', parsed);
-            computePositions();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('nbLevels').addEventListener('change', function(e) {
@@ -709,8 +713,8 @@
             if (parsed <= 0) { parsed = pyramidLevels; }
             if (parsed >= 12) { parsed = 12; }
             pyramidLevels = parsed;
-            buildTopColorIndexArray();
-            computePositions();
+            buildTopColorIndexArrayAllPlayers();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('cubeSize').addEventListener('change', function(e) {
@@ -718,9 +722,9 @@
             if (isNaN(parsed)) { parsed = cubeSize; }
             if (parsed <= 0) { parsed = cubeSize; }
             cubeSize = parsed;
-            buildTopColorIndexArray();
+            buildTopColorIndexArrayAllPlayers();
             computeSinCosCube();
-            computePositions();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('cubeHeight').addEventListener('change', function(e) {
@@ -728,8 +732,8 @@
             if (isNaN(parsed)) { parsed = cubeHeight; }
             if (parsed <= 0) { parsed = cubeHeight; }
             cubeHeight = parsed;
-            buildTopColorIndexArray();
-            computePositions();
+            buildTopColorIndexArrayAllPlayers();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('qbertStartLevel').addEventListener('change', function(e) {
@@ -737,8 +741,8 @@
             if (isNaN(parsed)) { parsed = startRow; }
             if (parsed <= 0) { parsed = startRow; }
             startRow = parsed;
-            buildTopColorIndexArray();
-            computePositions();
+            buildTopColorIndexArrayAllPlayers();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('qbertStartBlock').addEventListener('change', function(e) {
@@ -746,8 +750,8 @@
             if (isNaN(parsed)) { parsed = startCube; }
             if (parsed <= 0) { parsed = startCube; }
             startCube = parsed;
-            buildTopColorIndexArray();
-            computePositions();
+            buildTopColorIndexArrayAllPlayers();
+            computePositionsAllPlayers();
         });
 
         document.getElementById('colorLeft').addEventListener('change', function(e) {
@@ -774,13 +778,13 @@
             setColorPalette(this.value);
             setDiskColorList();
             updateColorInputValues();
-            buildTopColorIndexArray();
+            buildTopColorIndexArrayAllPlayers();
         });
 
         document.getElementById('qbertColorPaletteTop').addEventListener('change', function(e) {
             setColorPalette(currentColorPalette[currentPlayer], this.value);
             updateColorInputValues();
-            buildTopColorIndexArray();
+            buildTopColorIndexArrayAllPlayers();
         });
 
         document.getElementById('qbertLevelType').addEventListener('change', function(e) {
@@ -788,7 +792,7 @@
             if (isNaN(parsed)) { parsed = levelType[currentPlayer]; }
             if (parsed <= 0) { parsed = levelType[currentPlayer]; }
             levelType[currentPlayer] = parsed;
-            buildTopColorIndexArray();
+            buildTopColorIndexArrayAllPlayers();
         });
 
         document.getElementById('nbCredits').addEventListener('change', function(e) {
@@ -821,7 +825,7 @@
             currentLevelPlayer[currentPlayer] = parsed;
             levelSetup();
             updateColorInputValues();
-            buildTopColorIndexArray();
+            buildTopColorIndexArrayAllPlayers();
             sceneController('level');
         });
 
@@ -832,7 +836,7 @@
             currentRoundPlayer[currentPlayer] = parsed;
             levelSetup();
             updateColorInputValues();
-            buildTopColorIndexArray();
+            buildTopColorIndexArrayAllPlayers();
             sceneController(currentScene);
         });
 
@@ -1008,6 +1012,7 @@
                     gameOverTimer = gameOverTime;
                     fallTimer = fallTime;
                     backgroundFlashingTimer = backgroundFlashingTime;
+                    multiplayerStartTimer = multiplayerStartTime;
                     currentMainSceneBackgroundColor = backgroundMainColor;
                     currentCharacterIndex = 0;
                     resetObjectsList();
@@ -1190,6 +1195,11 @@
         }
 
         function updateMainScene(secondsPassed) {
+            if (nbPlayer == 2 && newPlayerStart == true) {
+                multiplayerStartTimer -= secondsPassed;
+                if (multiplayerStartTimer > 0) { return; }
+                newPlayerStart = false;
+            }
             if (gameOverPlayer[currentPlayer] == true) {
                 allowMovement = false;
                 gameOverSequence(secondsPassed);
@@ -1855,6 +1865,9 @@
 
         function changePlayer(playerIndex) {
             currentPlayer = playerIndex;
+            newPlayerStart = true;
+            resetObjectsList();
+            multiplayerStartTimer = multiplayerStartTime;
             if (gameStartedPlayer[currentPlayer] == false) {
                 startNewGamePlayer(currentPlayer);
             }
@@ -1957,6 +1970,7 @@
             prepareMainBoard();
             sceneController('level');
             gameStartedPlayer[currentPlayer] = true;
+            newPlayerStart = (nbPlayer == 2) ? true : false;
         }
 
         function checkRoundCompletion() {
@@ -2314,7 +2328,7 @@
             return false;
         }
 
-        function computePositions() {
+        function computePositionsAllPlayers() {
             for (let player = 0; player < maxPlayers; player++) {
                 resetQbertPostion(player);
             }
@@ -2322,6 +2336,12 @@
             for (let player = 0; player < maxPlayers; player++) {
                 computeQbertStartPosition(player);
             }
+        }
+
+        function computePositions(playerIndex) {
+            resetQbertPostion(playerIndex);
+            computePyramidPosition(pyramidHorizontalAlign, pyramidVerticalAlign);
+            computeQbertStartPosition(playerIndex);
         }
 
         function resetQbertPostion(player) {
@@ -2416,8 +2436,8 @@
         function prepareMainBoard() {
             levelSetup();
             updateColorInputValues();
-            buildTopColorIndexArray();
-            computePositions();
+            buildTopColorIndexArray(currentPlayer);
+            computePositions(currentPlayer);
             updateLevelRoundInputValues();
         }
 
@@ -2544,13 +2564,17 @@
             document.getElementById('colorTop').value = topColor;
         }
 
-        function buildTopColorIndexArray() {
+        function buildTopColorIndexArray(playerIndex) {
             let nbCubes = pyramidLevels * (pyramidLevels + 1) / 2;
+            topColorIndexArray[playerIndex] = new Array(nbCubes);
+            for (let i = 0; i < nbCubes; i++) {
+                topColorIndexArray[playerIndex][i] = currentTopColorIndex[playerIndex];
+            }
+        }
+
+        function buildTopColorIndexArrayAllPlayers() {
             for (let player = 0; player < maxPlayers; player++) {
-                topColorIndexArray[player] = new Array(nbCubes);
-                for (let i = 0; i < nbCubes; i++) {
-                    topColorIndexArray[player][i] = currentTopColorIndex[currentPlayer];
-                }
+                buildTopColorIndexArray(player);
             } 
         }
 
@@ -2717,13 +2741,18 @@
             if (showFlyingDisk == true) {
                 drawDisk(qbert[currentPlayer].x + offsetDiskQbertX + 5, qbert[currentPlayer].y + offsetDiskQbertY - 5, diskDiameter);
             }
-            if (qbert[currentPlayer].showOnTop == true && showBonus == false) {
+            if (qbert[currentPlayer].showOnTop == true && showBonus == false && newPlayerStart == false) {
                 drawQbert(qbert[currentPlayer].currentDirection, qbertSize, qbert[currentPlayer].x, qbert[currentPlayer].y, qbert[currentPlayer].knelt);
             }
             if (gameOverPlayer[currentPlayer] == true) {
                 drawGameOver();
             }
-            drawObjects(true);
+            if (newPlayerStart == true) {
+                drawCurrentPlayer();
+            }
+            if (newPlayerStart == false) {
+                drawObjects(true);
+            }
         }
 
         function drawTitleScene() {
@@ -2753,6 +2782,9 @@
             clearScreen();
             drawBackground(backgroundMainColor, frameStrokeColor);
             drawPlayground((canvas.width - 6 * cos30) / 2, screenPaddingY + qbertSize + levelSceneTopPadding, 3, 3, levelPlaygroundCubes, levelPlaygroundCubesColors);
+            if (nbPlayer == 2) {
+                drawCurrentPlayer();
+            }
             drawLevelLogo((canvas.width - 24 * letterLevelStrokeWidth) / 2, canvas.height - screenPaddingY - 11 * letterLevelStrokeHeight, leftColor, rightColor, topColor);
             if (levelNumberShow == true) {
                 drawLevelNumber((canvas.width - levelNumberTargetWidth) / 2, canvas.height - screenPaddingY - 3.5 * letterLevelStrokeHeight);
@@ -3060,6 +3092,39 @@
             ctx.fillRect(x, y + fontHeightSpacing / 2 - underlineHeight, textWidth, underlineHeight);
         }
 
+        function drawTextWithBackground(text, x, y, textColor, textStyle, backgroundColor, paddingTop, paddingRight, horizontalAlign = 'off', verticalAlign = 'off') {
+            ctx.font = textStyle;
+            let textWidth = ctx.measureText(text).width;
+            let posX = x;
+            let posY = y;
+            switch (horizontalAlign) {
+                case 'left':
+                    posX = screenPaddingX;
+                    break;
+                case 'right':
+                    posX = canvas.width - screenPaddingX - textWidth - 2 * paddingRight;
+                    break;
+                case 'center':
+                    posX = (canvas.width - (textWidth + 2 * paddingRight)) / 2;
+                    break;
+            }
+            switch (verticalAlign) {
+                case 'top':
+                    posY = screenPaddingY;
+                    break;
+                case 'bottom':
+                    posY = canvas.height - screenPaddingY - fontHeightSpacing - 2 * paddingTop;
+                    break;
+                case 'center':
+                    posY = (canvas.height - (fontHeightSpacing + 2 * paddingTop)) / 2;
+                    break;
+            }
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(posX, posY, textWidth + 2 * paddingRight, fontHeightSpacing + 2 * paddingTop);
+            ctx.fillStyle = textColor;
+            ctx.fillText(text, posX + paddingRight, posY + paddingTop + fontHeightSpacing - 5);
+        }
+
         function drawQbertFontText(text, x, y, fontHeight) {
             let currentPosX = x;
             text = text.toUpperCase();
@@ -3156,16 +3221,7 @@
         }
 
         function drawGameOver() {
-            let paddingTop = 2;
-            let paddingRight = 5;
-            ctx.font = fontsList.bold;
-            let textWidth = ctx.measureText(gameOverString).width;
-            let posX = (canvas.width - (textWidth + 2 * paddingRight)) / 2;
-            let posY = (canvas.height - (fontHeightSpacing + 2 * paddingTop)) / 2;
-            ctx.fillStyle = backgroundMainColor;
-            ctx.fillRect(posX, posY, textWidth + 2 * paddingRight, fontHeightSpacing + 2 * paddingTop);
-            ctx.fillStyle = fontsColors.purple;
-            ctx.fillText(gameOverString, posX + paddingRight, posY + paddingTop + fontHeightSpacing - 5);
+            drawTextWithBackground(gameOverString, 0, 0, fontsColors.purple, fontsList.bold, backgroundMainColor, 2, 5, 'center', 'center');
         }
 
         function drawPushStart() {
@@ -3535,6 +3591,10 @@
             targetY -= cubeHeight;
             ctx.lineTo(targetX, targetY);
             ctx.fill();
+        }
+
+        function drawCurrentPlayer() {
+            drawTextWithBackground(playerSelectString[currentPlayer], 0, 0, fontsColors.purple, fontsList.bold, backgroundMainColor, 2, 5, 'center', 'center');
         }
 
         function drawLevelNumber(x, y) {
