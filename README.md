@@ -15,6 +15,7 @@ You can play this game either by using the keyboard, or by clicking on the dedic
 The keyboard controls are as follow :
 
 | Key | Action |
+| --- | ------ |
 | Space | Insert a coin |
 | 1 | One-player start |
 | 2 | Two-player start |
